@@ -1,362 +1,426 @@
 {
 	"AWSTemplateFormatVersion": "2010-09-09",
+
 	"Description": "Informatica Data Lake Solution for AWS S3 Data Lake. This template creates Amazon EMR, S3, Redshift, EC2 instances, Elastic IPs and related resources and installs Informatica EIC and BDM. You will be billed for the AWS resources used if you create a stack from this template. QS(5024)",
-    "Metadata": {
-        "AWS::CloudFormation::Interface": {
-            "ParameterGroups": [
-                {
-                    "Label": {
-                        "default": "AWS Quick Start Configuration"
-                    },
-                    "Parameters": [
-                        "QSS3BucketName",
-                        "QSS3KeyPrefix"
-                    ]
-                },
-                {
-                    "Label": {
-                        "default": "Amazon EC2 Configuration"
+
+	"Parameters": {
+
+		"KeyName": {
+			"Description": "Name of an existing Amazon EC2 keypair. You must specify this option to enable SSH access to Informatica domain and cluster instances",
+			"Type": "AWS::EC2::KeyPair::KeyName"
 		},
-                    "Parameters": [
-                        "ICSClusterSize",
-                        "InformaticaServerInstanceType",
-                        "KeyName"
-                    ]
+
+		"VPCID": {
+			"Description": "ID of your existing VPC where you want to deploy Informatica Services",
+			"Type": "AWS::EC2::VPC::Id"
 		},
-                {
-                    "Label": {
-                        "default": "Amazon EMR Configuration"
+
+		"InformaticaKeyS3Bucket": {
+			"Type": "String",
+			"Description": "Name of the Amazon S3 bucket in your account that contains Informatica Key"
 		},
-                    "Parameters": [
-                        "EMRClusterName",
-                        "EMRCoreInstanceType",
-                        "EMRCoreNodes",
-                        "EMRMasterInstanceType",
-                        "EMRLogBucket"
-                    ]
+
+		"InformaticaKeyName": {
+			"Type": "String",
+			"Description": "The Informatica license key name. For example, <license key name> or <bucket sub folder/license key name>"
 		},
-                {
-                    "Label": {
-                        "default": "Amazon RDS Configuration"
+
+		"InformaticaAdminUsername": {
+			"Description": "Username to access Informatica Administrator",
+			"Type": "String"
 		},
-                    "Parameters": [
-                        "DBUser",
-                        "DBPassword"
-                    ]
+
+		"InformaticaAdminPassword": {
+			"Description": "Password to access Informatica Administrator",
+			"Type": "String",
+			"NoEcho": "True"
 		},
-                {
-                    "Label": {
-                        "default": "Amazon Redshift Configuration"
+
+		"InformaticaServerSubnetID": {
+			"Description": "Select a publicly accessible subnet ID for the Informatica domain",
+			"Type": "AWS::EC2::Subnet::Id"
 		},
-                    "Parameters": [
-                        "RedshiftClusterType",
-                        "RedshiftDatabaseName",
-                        "RedshiftNumberOfNodes",
-                        "RedshiftNodeType",
-                        "RedshiftUsername",
-                        "RedshiftPassword",
-                        "RedshiftDatabasePort"
-                    ]
-		},
-                {
-                    "Label": {
-                        "default": "Informatica Enterprise Catalog and BDM Configuration"
-		},
-                    "Parameters": [
-                        "InformaticaAdminUsername",
-                        "InformaticaAdminPassword",
-                        "InformaticaKeyS3Bucket",
-                        "InformaticaKeyName",
-                        "ImportSampleData"
-                    ]
-		},
-                {
-                    "Label": {
-                        "default": "Network Configuration"
-		},
-                    "Parameters": [
-                        "DBSubnetIDs",
-                        "InformaticaServerSubnetID",
-                        "IPAddressRange",
-                        "VPCID"
-                    ]
-                }
+
+		"InformaticaServerInstanceType": {
+			"Type": "String",
+			"Default": "c4.4xlarge",
+			"AllowedValues": [
+				"c4.4xlarge",
+				"c4.8xlarge"
 			],
-            "ParameterLabels": {
-                "DBPassword": {
-                    "default": "Informatica Database Instance Password"
+			"Description": "The EC2 instance type for the instance that hosts the Informatica domain. Default is c4.4xlarge"
 		},
-                "DBSubnetIDs": {
-                    "default": "Informatica Database Subnets"
+
+		"DBUser": {
+			"Default": "awsquickstart",
+			"Description": "Username for the database instance associated with Informatica domain and services (such as Model Repository Service, Data Integration Service, Content Management Service)",
+			"Type": "String",
+			"MinLength": "8",
+			"MaxLength": "18"
 		},
-                "DBUser": {
-                    "default": "Informatica Database Instance Username"
+
+		"DBPassword": {
+			"Description": "Password for the database instance associated with Informatica domain and services (such as Model Repository Service, Data Integration Service, Content Management Service)",
+			"Type": "String",
+			"NoEcho": "True",
+			"MinLength": "8",
+			"MaxLength": "18"
+		},
+
+		"DBSubnetIDs": {
+			"Description": "IDs of two private subnets in the selected VPC. These must be in different Availability Zones in the selected VPC",
+			"Type": "List<AWS::EC2::Subnet::Id>"
+		},
+
+		"ICSClusterSize": {
+			"Type": "String",
+			"Default": "Small",
+			"AllowedValues": [
+				"Small",
+				"Medium",
+				"Large"
+			],
+			"Description": "The cluster size (i.) Small (c4.8xlarge, single node) (ii.) Medium (c4.8xlarge, three nodes) (iii.)  Large (c4.8xlarge, six nodes)"
+		},
+
+		"IPAddressRange": {
+			"Description": "The CIDR IP range that is permitted to access the Informatica domain and the Informatica embedded cluster",
+			"Type": "String",
+			"MinLength": "9",
+			"MaxLength": "18",
+			"AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+			"ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
+		},
+		"ImportSampleData": {
+			"Type": "String",
+			"Default": "No",
+			"AllowedValues": [
+				"Yes",
+				"No"
+			],
+			"Description": "Select Yes to import the sample catalog data. You can use the sample data to get started with the product"
 		},
 		"EMRClusterName": {
-                    "default": "EMR Cluster Name"
+			"Description": "Enter a name for your EMR cluster",
+			"Type": "String"
 		},
 		"EMRCoreInstanceType": {
-                    "default": "EMR Core Instance Type"
+			"Type": "String",
+			"Default": "m4.xlarge",
+			"AllowedValues": [
+				"m4.xlarge",
+				"m4.2xlarge",
+				"m4.4xlarge",
+				"m4.10xlarge"
+			],
+			"Description": "Enter the instance type for the EMR core nodes. Default is m4.xlarge"
 		},
 		"EMRCoreNodes": {
-                    "default": "EMR Core Nodes"
+			"Description": "Enter the number of Core Nodes. Minimum is 1.",
+			"Type": "Number",
+			"MinValue": "1",
+			"MaxValue": "500"
 		},
 		"EMRLogBucket": {
-                    "default": "EMR Logs Bucket Name"
+			"Description": "Enter the S3 bucket for the EMR logs",
+			"Type": "String"
 		},
 		"EMRMasterInstanceType": {
-                    "default": "EMR Master Instance Type"
-		},
-                "ICSClusterSize": {
-                    "default": "Informatica Embedded Cluster Size"
-		},
-                "IPAddressRange": {
-                    "default": "IP Address Range"
-		},
-                "ImportSampleData": {
-                    "default": "Import Sample Content"
-		},
-                "InformaticaAdminPassword": {
-                    "default": "Informatica Administrator Password"
-		},
-                "InformaticaAdminUsername": {
-                    "default": "Informatica Administrator Username"
-		},
-                "InformaticaKeyName": {
-                    "default": "License Key Name"
-		},
-                "InformaticaKeyS3Bucket": {
-                    "default": "License Key Location"
-		},
-                "InformaticaServerInstanceType": {
-                    "default": "Informatica Domain Instance Type"
-		},
-                "InformaticaServerSubnetID": {
-                    "default": "Informatica Domain Subnet"
-	},
-                "KeyName": {
-                    "default": "Key Pair Name"
-		},
-                "QSS3BucketName": {
-                    "default": "Quick Start S3 Bucket Name"
-		},
-                "QSS3KeyPrefix": {
-                    "default": "Quick Start S3 Key Prefix"
-				},
-                "RedshiftClusterType": {
-                    "default": "Redshift Cluster Type"
-		},
-                "RedshiftDatabaseName": {
-                    "default": "Redshift Database Name"
-				},
-                "RedshiftDatabasePort": {
-                    "default": "Redshift Database Port"
-		},
-                "RedshiftNodeType": {
-                    "default": "Redshift Node Type"
-				},
-                "RedshiftNumberOfNodes": {
-                    "default": "Redshift Number of Nodes"
-		},
-                "RedshiftPassword": {
-                    "default": "Redshift Password"
-		},
-                "RedshiftUsername": {
-                    "default": "Redshift Username"
-				},
-                "VPCID": {
-                    "default": "VPC"
-                }
-            }
-				}
-		},
-    "Parameters": {
-        "DBPassword": {
-            "Description": "Password for the database instance associated with Informatica domain and services (such as Model Repository Service, Data Integration Service, Content Management Service)",
-            "MaxLength": "18",
-            "MinLength": "8",
-            "NoEcho": "True",
-            "Type": "String"
-						},
-        "DBSubnetIDs": {
-            "Description": "IDs of two private subnets in the selected VPC. These must be in different Availability Zones in the selected VPC",
-            "Type": "List<AWS::EC2::Subnet::Id>"
-				},
-        "DBUser": {
-            "Default": "awsquickstart",
-            "Description": "Username for the database instance associated with Informatica domain and services (such as Model Repository Service, Data Integration Service, Content Management Service)",
-            "MaxLength": "18",
-            "MinLength": "8",
-            "Type": "String"
-	},
-        "EMRClusterName": {
-            "Description": "Enter a name for your EMR cluster",
-            "Type": "String"
-					},
-        "EMRCoreInstanceType": {
-            "AllowedValues": [
-                "m4.xlarge",
-                "m4.2xlarge",
-                "m4.4xlarge",
-                "m4.10xlarge"
-            ],
-            "Default": "m4.xlarge",
-            "Description": "Enter the instance type for the EMR core nodes. Default is m4.xlarge",
-            "Type": "String"
-					},
-        "EMRCoreNodes": {
-            "Description": "Enter the number of Core Nodes. Minimum is 1.",
-            "MaxValue": "500",
-            "MinValue": "1",
-            "Type": "Number"
-					},
-        "EMRLogBucket": {
-            "Description": "Enter the S3 bucket for the EMR logs",
-            "Type": "String"
-					},
-        "EMRMasterInstanceType": {
-            "AllowedValues": [
-                "m4.large",
-                "m4.xlarge",
-                "m4.2xlarge",
-                "m4.4xlarge",
-                "m4.10xlarge"
-            ],
-            "Default": "m4.xlarge",
-            "Description": "Enter the instance type for the EMR master node. Default is m4.xlarge",
-            "Type": "String"
-					},
-        "ICSClusterSize": {
-            "AllowedValues": [
-                "Small",
-                "Medium",
-                "Large"
-            ],
-            "Default": "Small",
-            "Description": "The cluster size (i.) Small (c4.8xlarge, single node) (ii.) Medium (c4.8xlarge, three nodes) (iii.)  Large (c4.8xlarge, six nodes)",
-            "Type": "String"
-					},
-        "IPAddressRange": {
-            "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
-            "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x.",
-            "Description": "The CIDR IP range that is permitted to access the Informatica domain and the Informatica embedded cluster",
-            "MaxLength": "18",
-            "MinLength": "9",
-            "Type": "String"
-					},
-        "ImportSampleData": {
-            "AllowedValues": [
-                "Yes",
-                "No"
+			"Type": "String",
+			"Default": "m4.xlarge",
+			"AllowedValues": [
+				"m4.large",
+				"m4.xlarge",
+				"m4.2xlarge",
+				"m4.4xlarge",
+				"m4.10xlarge"
 			],
-            "Default": "No",
-            "Description": "Select Yes to import the sample catalog data. You can use the sample data to get started with the product",
-            "Type": "String"
-				},
-        "InformaticaAdminPassword": {
-            "Description": "Password to access Informatica Administrator",
-            "NoEcho": "True",
-            "Type": "String"
-				},
-				"InformaticaAdminUsername": {
-            "Description": "Username to access Informatica Administrator",
-            "Type": "String"
-				},
-        "InformaticaKeyName": {
-            "Description": "The Informatica license key name. For example, <license key name> or <bucket sub folder/license key name>",
-            "Type": "String"
-				},
-				"InformaticaKeyS3Bucket": {
-            "Description": "Name of the Amazon S3 bucket in your account that contains Informatica Key",
-            "Type": "String"
-				},
-        "InformaticaServerInstanceType": {
-            "AllowedValues": [
-                "c4.4xlarge",
-                "c4.8xlarge"
-            ],
-            "Default": "c4.4xlarge",
-            "Description": "The EC2 instance type for the instance that hosts the Informatica domain. Default is c4.4xlarge",
-            "Type": "String"
-				},
-				"InformaticaServerSubnetID": {
-            "Description": "Select a publicly accessible subnet ID for the Informatica domain",
-            "Type": "AWS::EC2::Subnet::Id"
-				},
-				"KeyName": {
-            "Description": "Name of an existing Amazon EC2 keypair. You must specify this option to enable SSH access to Informatica domain and cluster instances",
-            "Type": "AWS::EC2::KeyPair::KeyName"
-				},
-				"QSS3BucketName": {
-            "AllowedPattern": "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$",
-            "ConstraintDescription": "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-).",
-            "Default": "quickstart-reference",
-            "Description": "Do not change: S3 bucket name for the Quick Start assets. Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-).",
-            "Type": "String"
-				},
-				"QSS3KeyPrefix": {
-            "AllowedPattern": "^[0-9a-zA-Z-/]*$",
-            "ConstraintDescription": "Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/). It cannot start or end with forward slash (/) because they are automatically appended.",
-            "Default": "informatica/datalake/latest/",
-            "Description": "Do not change: S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/). It cannot start or end with forward slash (/) because they are automatically appended.",
-            "Type": "String"
-        },
-        "RedshiftClusterType": {
-            "AllowedValues": [
-                "single-node",
-                "multi-node"
-            ],
-            "Default": "single-node",
-            "Description": "The type of cluster. Default is single-node",
-            "Type": "String"
-				},
-				"RedshiftDatabaseName": {
-            "AllowedPattern": "([a-z]|[0-9])+",
-            "Default": "dev",
-            "Description": "The name of the first database to be created when the cluster is created",
-            "Type": "String"
-        },
-        "RedshiftDatabasePort": {
-            "Default": "5439",
-            "Description": "The port number on which the cluster accepts incoming connections. Default is 5439",
-            "Type": "Number"
-				},
-        "RedshiftNodeType": {
-            "AllowedValues": [
-                "ds2.xlarge",
-                "ds2.8xlarge",
-                "dc1.large",
-                "dc1.8xlarge"
-            ],
-            "Default": "ds2.xlarge",
-            "Description": "Specifies the compute, memory, storage, and I/O capacity of the cluster's nodes. Default is ds2.xlarge",
-            "Type": "String"
-				},
-				"RedshiftNumberOfNodes": {
-            "Default": "1",
-            "Description": "The number of compute nodes in the cluster. For multi-node clusters, the NumberOfNodes parameter must be greater than 1",
-            "Type": "Number"
-				},
-        "RedshiftPassword": {
-            "AllowedPattern": "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d!#$%&\\(\\)*+,-.;<=>?\\[\\]^_`{|}~]{8,64}$",
-            "Description": "The password that is associated with the master user account for the cluster that is being created. Must be 8 to 64 characters in length and contain at least one uppercase letter, one lowercase letter, and one number",
-            "MaxLength": "64",
-            "MinLength": "8",
-            "NoEcho": "true",
-            "Type": "String"
-				},
-				"RedshiftUsername": {
-            "AllowedPattern": "([a-z])([a-z]|[0-9])*",
-            "Default": "defaultuser",
-            "Description": "The user name that is associated with the master user account for the cluster that is being created",
-            "Type": "String"
-				},
-        "VPCID": {
-            "Description": "ID of your existing VPC where you want to deploy Informatica Services",
-            "Type": "AWS::EC2::VPC::Id"
+			"Description": "Enter the instance type for the EMR master node. Default is m4.xlarge"
+		},
+		"QSS3BucketName": {
+			"AllowedPattern": "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$",
+			"ConstraintDescription": "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-).",
+			"Default": "quickstart-reference",
+			"Description": "Do not change: S3 bucket name for the Quick Start assets. Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-).",
+			"Type": "String"
+		},
+		"QSS3KeyPrefix": {
+			"AllowedPattern": "^[0-9a-zA-Z-]+(/[0-9a-zA-Z-]+)*$",
+			"ConstraintDescription": "Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/). It cannot start or end with forward slash (/) because they are automatically appended.",
+			"Default": "informatica/datalake/latest",
+			"Description": "Do not change: S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/). It cannot start or end with forward slash (/) because they are automatically appended.",
+			"Type": "String"
+		},
+		"RedshiftDatabaseName": {
+			"Description": "The name of the first database to be created when the cluster is created",
+			"Type": "String",
+			"Default": "dev",
+			"AllowedPattern": "([a-z]|[0-9])+"
+		},
+		"RedshiftClusterType": {
+			"Description": "The type of cluster. Default is single-node",
+			"Type": "String",
+			"Default": "single-node",
+			"AllowedValues": ["single-node", "multi-node"]
+		},
+		"RedshiftNumberOfNodes": {
+			"Description": "The number of compute nodes in the cluster. For multi-node clusters, the NumberOfNodes parameter must be greater than 1",
+			"Type": "Number",
+			"Default": "1"
+		},
+		"RedshiftNodeType": {
+			"Description": "Specifies the compute, memory, storage, and I/O capacity of the cluster's nodes. Default is ds2.xlarge",
+			"Type": "String",
+			"Default": "ds2.xlarge",
+			"AllowedValues": ["ds2.xlarge", "ds2.8xlarge", "dc1.large", "dc1.8xlarge"]
+		},
+		"RedshiftUsername": {
+			"Description": "The user name that is associated with the master user account for the cluster that is being created",
+			"Type": "String",
+			"Default": "defaultuser",
+			"AllowedPattern": "([a-z])([a-z]|[0-9])*"
+		},
+		"RedshiftPassword": {
+			"Description": "The password that is associated with the master user account for the cluster that is being created. Must be 8 to 64 characters in length and contain at least one uppercase letter, one lowercase letter, and one number",
+			"Type": "String",
+			"NoEcho": "true",
+			"MinLength": "8",
+			"MaxLength": "64",
+			"AllowedPattern": "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d!#$%&\\(\\)*+,-.;<=>?\\[\\]^_`{|}~]{8,64}$"
+		},
+		"RedshiftDatabasePort": {
+			"Description": "The port number on which the cluster accepts incoming connections. Default is 5439",
+			"Type": "Number",
+			"Default": "5439"
 		}
 	},
+	"Conditions": {
+
+		"IsMultiNodeRedShiftCluster": {
+			"Fn::Equals": [{
+					"Ref": "RedshiftClusterType"
+				}, "multi-node"]
+		},
+		"NoEMRLogBucketCondition": {
+			"Fn::Equals": [
+				"", {
+					"Ref": "EMRLogBucket"
+				}
+			]
+		},
+		"SingleNodeCnd": {
+			"Fn::Equals": [{
+					"Ref": "ICSClusterSize"
+				},
+				"Small"
+			]
+		},
+		"CreateMediumClusterCnd": {
+			"Fn::Equals": [{
+					"Ref": "ICSClusterSize"
+				},
+				"Medium"
+			]
+		},
+		"CreateLargeClusterCnd": {
+			"Fn::Equals": [{
+					"Ref": "ICSClusterSize"
+				},
+				"Large"
+			]
+		},
+		"MultipleNodeCnd": {
+			"Fn::Or": [{
+					"Condition": "CreateMediumClusterCnd"
+				}, {
+					"Condition": "CreateLargeClusterCnd"
+				}
+			]
+		},
+		"ImportSampleCnd": {
+			"Fn::Equals": [{
+					"Ref": "ImportSampleData"
+				},
+				"Yes"
+			]
+		},
+		"IsMultiNodeCluster": {
+			"Fn::Not": [{
+					"Fn::Equals": [{
+							"Ref": "EMRCoreNodes"
+						},
+						"1"
+					]
+				}
+			]
+		}
+	},
+	"Metadata": {
+		"AWS::CloudFormation::Interface": {
+			"ParameterGroups": [{
+					"Label": {
+						"default": "Network Configuration"
+					},
+					"Parameters": [
+						"VPCID",
+						"InformaticaServerSubnetID",
+						"DBSubnetIDs",
+						"IPAddressRange"
+					]
+				}, {
+					"Label": {
+						"default": "Amazon EC2 Configuration"
+					},
+					"Parameters": [
+						"KeyName",
+						"InformaticaServerInstanceType",
+						"ICSClusterSize"
+					]
+				}, {
+					"Label": {
+						"default": "Amazon RDS Configuration"
+					},
+					"Parameters": [
+						"DBUser",
+						"DBPassword"
+					]
+				}, {
+					"Label": {
+						"default": "Informatica Enterprise Catalog and BDM Configuration"
+					},
+					"Parameters": [
+						"InformaticaAdminUsername",
+						"InformaticaAdminPassword",
+						"InformaticaKeyS3Bucket",
+						"InformaticaKeyName",
+						"ImportSampleData"
+					]
+				}, {
+					"Label": {
+						"default": "Amazon EMR Configuration"
+					},
+					"Parameters": [
+						"EMRMasterInstanceType",
+						"EMRCoreInstanceType",
+						"EMRClusterName",
+						"EMRCoreNodes",
+						"EMRLogBucket"
+					]
+				}, {
+					"Label": {
+						"default": "Amazon Redshift Configuration"
+					},
+					"Parameters": [
+						"RedshiftDatabaseName",
+						"RedshiftClusterType",
+						"RedshiftNumberOfNodes",
+						"RedshiftNodeType",
+						"RedshiftUsername",
+						"RedshiftPassword",
+						"RedshiftDatabasePort"
+					]
+				}, {
+					"Label": {
+						"default": "AWS Quick Start Configuration"
+					},
+					"Parameters": [
+						"QSS3BucketName",
+						"QSS3KeyPrefix"
+					]
+				}
+			],
+			"ParameterLabels": {
+				"VPCID": {
+					"default": "VPC"
+				},
+				"InformaticaServerInstanceType": {
+					"default": "Informatica Domain Instance Type"
+				},
+				"InformaticaAdminUsername": {
+					"default": "Informatica Administrator Username"
+				},
+				"InformaticaAdminPassword": {
+					"default": "Informatica Administrator Password"
+				},
+				"InformaticaKeyS3Bucket": {
+					"default": "License Key Location"
+				},
+				"InformaticaKeyName": {
+					"default": "License Key Name"
+				},
+				"InformaticaServerSubnetID": {
+					"default": "Informatica Domain Subnet"
+				},
+				"DBUser": {
+					"default": "Informatica Database Instance Username"
+				},
+				"DBPassword": {
+					"default": "Informatica Database Instance Password"
+				},
+				"DBSubnetIDs": {
+					"default": "Informatica Database Subnets"
+				},
+				"ICSClusterSize": {
+					"default": "Informatica Embedded Cluster Size"
+				},
+				"ImportSampleData": {
+					"default": "Import Sample Content"
+				},
+				"IPAddressRange": {
+					"default": "IP Address Range"
+				},
+				"KeyName": {
+					"default": "Key Pair Name"
+				},
+				"EMRClusterName": {
+					"default": "EMR Cluster Name"
+				},
+				"EMRCoreInstanceType": {
+					"default": "EMR Core Instance Type"
+				},
+				"EMRCoreNodes": {
+					"default": "EMR Core Nodes"
+				},
+				"EMRLogBucket": {
+					"default": "EMR Logs Bucket Name"
+				},
+				"EMRMasterInstanceType": {
+					"default": "EMR Master Instance Type"
+				},
+				"QSS3BucketName": {
+					"default": "Quick Start S3 Bucket Name"
+				},
+				"QSS3KeyPrefix": {
+					"default": "Quick Start S3 Key Prefix"
+				},
+				"RedshiftDatabaseName": {
+					"default": "Redshift Database Name"
+				},
+				"RedshiftClusterType": {
+					"default": "Redshift Cluster Type"
+				},
+				"RedshiftNumberOfNodes": {
+					"default": "Redshift Number of Nodes"
+				},
+				"RedshiftNodeType": {
+					"default": "Redshift Node Type"
+				},
+				"RedshiftUsername": {
+					"default": "Redshift Username"
+				},
+				"RedshiftPassword": {
+					"default": "Redshift Password"
+				},
+				"RedshiftDatabasePort": {
+					"default": "Redshift Database Port"
+				}
+
+			}
+		}
+	},
+
 	"Mappings": {
+
 		"S3ConnectionMap": {
 			"ap-northeast-1": {
 				"REGION": "Asia Pacific (Tokyo)"
@@ -400,7 +464,9 @@
 			"us-west-2": {
 				"REGION": "US West(Oregon)"
 			}
+
 		},
+
 		"AWSAMIRegionMap": {
 			"AMI": {
 				"INFAADMINHVM": "Administrator-Server Image Data Lake on AWS",
@@ -411,6 +477,7 @@
 				"INFAADMINHVM": "ami-6dd5620b",
 				"INFAEICCLUSTERHVM": "ami-53b40335",
 				"INFADBHVM": "arn:aws:rds:ap-northeast-1:516473838419:snapshot:infa1020oracle"
+
 			},
 			"ap-northeast-2": {
 				"INFAADMINHVM": "ami-6de74003",
@@ -481,240 +548,24 @@
 		"ClusterSizeMapping": {
 			"Small": {
 				"InstanceType": "c4.8xlarge",
-				"NumberOfInstances": "1"
-			},
-			"Medium": {
-				"InstanceType": "c4.8xlarge",
-				"NumberOfInstances": "3"
-			},
-			"Large": {
-				"InstanceType": "c4.8xlarge",
-				"NumberOfInstances": "6"
-			}
-		},
-		"ClusterSizeMappingLDM": {
-			"Small": {
+				"NumberOfInstances": "1",
 				"loadtype": "low"
 			},
 			"Medium": {
+				"InstanceType": "c4.8xlarge",
+				"NumberOfInstances": "3",
 				"loadtype": "medium"
 			},
 			"Large": {
+				"InstanceType": "c4.8xlarge",
+				"NumberOfInstances": "6",
 				"loadtype": "high"
 			}
-		},
-		"MultiAZRegionMapping": {
-			"us-east-1": {
-				"Supporting": "YES"
-			},
-			"us-east-2": {
-				"Supporting": "YES"
-			},
-			"us-west-1": {
-				"Supporting": "NO"
-			},
-			"us-west-2": {
-				"Supporting": "YES"
-			},
-			"ap-south-1": {
-				"Supporting": "YES"
-			},
-			"ap-northeast-1": {
-				"Supporting": "YES"
-			},
-			"ap-northeast-2": {
-				"Supporting": "YES"
-			},
-			"ap-southeast-1": {
-				"Supporting": "NO"
-			},
-			"ap-southeast-2": {
-				"Supporting": "YES"
-			},
-			"sa-east-1": {
-				"Supporting": "YES"
-			},
-			"eu-west-1": {
-				"Supporting": "YES"
-			},
-			"eu-west-2": {
-				"Supporting": "YES"
-			},
-			"eu-central-1": {
-				"Supporting": "NO"
-			},
-			"ca-central-1": {
-				"Supporting": "YES"
-			}
-		},
-		"AWSInfoRegionMap": {
-			"ap-northeast-1": {
-				"Partition": "aws",
-				"QuickStartS3URL": "https://s3.amazonaws.com"
-			},
-			"ap-northeast-2": {
-				"Partition": "aws",
-				"QuickStartS3URL": "https://s3.amazonaws.com"
-			},
-			"ap-south-1": {
-				"Partition": "aws",
-				"QuickStartS3URL": "https://s3.amazonaws.com"
-			},
-			"ap-southeast-1": {
-				"Partition": "aws",
-				"QuickStartS3URL": "https://s3.amazonaws.com"
-			},
-			"ap-southeast-2": {
-				"Partition": "aws",
-				"QuickStartS3URL": "https://s3.amazonaws.com"
-			},
-			"ca-central-1": {
-				"Partition": "aws",
-				"QuickStartS3URL": "https://s3.amazonaws.com"
-			},
-			"eu-central-1": {
-				"Partition": "aws",
-				"QuickStartS3URL": "https://s3.amazonaws.com"
-			},
-			"eu-west-1": {
-				"Partition": "aws",
-				"QuickStartS3URL": "https://s3.amazonaws.com"
-			},
-			"eu-west-2": {
-				"Partition": "aws",
-				"QuickStartS3URL": "https://s3.amazonaws.com"
-			},
-			"sa-east-1": {
-				"Partition": "aws",
-				"QuickStartS3URL": "https://s3.amazonaws.com"
-			},
-			"us-east-1": {
-				"Partition": "aws",
-				"QuickStartS3URL": "https://s3.amazonaws.com"
-			},
-			"us-east-2": {
-				"Partition": "aws",
-				"QuickStartS3URL": "https://s3.amazonaws.com"
-			},
-			"us-west-1": {
-				"Partition": "aws",
-				"QuickStartS3URL": "https://s3.amazonaws.com"
-			},
-			"us-west-2": {
-				"Partition": "aws",
-				"QuickStartS3URL": "https://s3.amazonaws.com"
-			}
 		}
 	},
-	"Rules": {
-		"SubnetsInVPC": {
-            "Assertions": [
-                {
-					"Assert": {
-                        "Fn::EachMemberIn": [
-                            {
-								"Fn::ValueOfAll": [
-									"AWS::EC2::Subnet::Id",
-									"VpcId"
-								]
-                            },
-                            {
-								"Fn::RefAll": "AWS::EC2::VPC::Id"
-							}
-						]
-					},
-					"AssertDescription": "All subnets must in the VPC"
-				}
-			]
-		}
-	},
-    "Conditions": {
-        "IsMultiNodeRedShiftCluster": {
-            "Fn::Equals": [
-                {
-                    "Ref": "RedshiftClusterType"
-                },
-                "multi-node"
-            ]
-        },
-        "NoEMRLogBucketCondition": {
-            "Fn::Equals": [
-                "",
-                {
-                    "Ref": "EMRLogBucket"
-                }
-            ]
-        },
-        "SingleNodeCnd": {
-            "Fn::Equals": [
-                {
-                    "Ref": "ICSClusterSize"
-                },
-                "Small"
-            ]
-        },
-        "CreateMediumClusterCnd": {
-            "Fn::Equals": [
-                {
-                    "Ref": "ICSClusterSize"
-                },
-                "Medium"
-            ]
-        },
-        "CreateLargeClusterCnd": {
-            "Fn::Equals": [
-                {
-                    "Ref": "ICSClusterSize"
-                },
-                "Large"
-            ]
-        },
-        "MultipleNodeCnd": {
-            "Fn::Or": [
-                {
-                    "Condition": "CreateMediumClusterCnd"
-                },
-                {
-                    "Condition": "CreateLargeClusterCnd"
-                }
-            ]
-        },
-        "ImportSampleCnd": {
-            "Fn::Equals": [
-                {
-                    "Ref": "ImportSampleData"
-                },
-                "Yes"
-            ]
-        },
-        "IsMultiNodeCluster": {
-            "Fn::Not": [
-                {
-                    "Fn::Equals": [
-                        {
-                            "Ref": "EMRCoreNodes"
-                        },
-                        "1"
-                    ]
-                }
-            ]
-        },
-        "SupportMultiAZCnd": {
-            "Fn::Equals": [
-                {
-                    "Fn::FindInMap": [
-                        "MultiAZRegionMapping",
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        "Supporting"
-                    ]
-                },
-                "YES"
-            ]
-        }
-    },
+
 	"Resources": {
+
 		"ElasticIPNode1": {
 			"Type": "AWS::EC2::EIP",
 			"Properties": {
@@ -763,17 +614,14 @@
 				"SubnetId": {
 					"Ref": "InformaticaServerSubnetID"
 				},
-                "GroupSet": [
-                    {
+				"GroupSet": [{
 						"Ref": "AdditionalICSSecurityGroup"
-                    },
-                    {
+					}, {
 						"Ref": "InternalAdditionalICSSecurityGroup"
 					}
 				],
 				"SourceDestCheck": "true",
-                "Tags": [
-                    {
+				"Tags": [{
 						"Key": "Name",
 						"Value": "Informatica Node 1 Network Interface"
 					}
@@ -788,17 +636,14 @@
 				"SubnetId": {
 					"Ref": "InformaticaServerSubnetID"
 				},
-                "GroupSet": [
-                    {
+				"GroupSet": [{
 						"Ref": "AdditionalICSSecurityGroup"
-                    },
-                    {
+					}, {
 						"Ref": "InternalAdditionalICSSecurityGroup"
 					}
 				],
 				"SourceDestCheck": "true",
-                "Tags": [
-                    {
+				"Tags": [{
 						"Key": "Name",
 						"Value": "Informatica Node 2 Network Interface"
 					}
@@ -813,17 +658,14 @@
 				"SubnetId": {
 					"Ref": "InformaticaServerSubnetID"
 				},
-                "GroupSet": [
-                    {
+				"GroupSet": [{
 						"Ref": "AdditionalICSSecurityGroup"
-                    },
-                    {
+					}, {
 						"Ref": "InternalAdditionalICSSecurityGroup"
 					}
 				],
 				"SourceDestCheck": "true",
-                "Tags": [
-                    {
+				"Tags": [{
 						"Key": "Name",
 						"Value": "Informatica Node 3 Network Interface"
 					}
@@ -838,17 +680,14 @@
 				"SubnetId": {
 					"Ref": "InformaticaServerSubnetID"
 				},
-                "GroupSet": [
-                    {
+				"GroupSet": [{
 						"Ref": "AdditionalICSSecurityGroup"
-                    },
-                    {
+					}, {
 						"Ref": "InternalAdditionalICSSecurityGroup"
 					}
 				],
 				"SourceDestCheck": "true",
-                "Tags": [
-                    {
+				"Tags": [{
 						"Key": "Name",
 						"Value": "Informatica Node 4 Network Interface"
 					}
@@ -863,17 +702,14 @@
 				"SubnetId": {
 					"Ref": "InformaticaServerSubnetID"
 				},
-                "GroupSet": [
-                    {
+				"GroupSet": [{
 						"Ref": "AdditionalICSSecurityGroup"
-                    },
-                    {
+					}, {
 						"Ref": "InternalAdditionalICSSecurityGroup"
 					}
 				],
 				"SourceDestCheck": "true",
-                "Tags": [
-                    {
+				"Tags": [{
 						"Key": "Name",
 						"Value": "Informatica Node 5 Network Interface"
 					}
@@ -888,17 +724,14 @@
 				"SubnetId": {
 					"Ref": "InformaticaServerSubnetID"
 				},
-                "GroupSet": [
-                    {
+				"GroupSet": [{
 						"Ref": "AdditionalICSSecurityGroup"
-                    },
-                    {
+					}, {
 						"Ref": "InternalAdditionalICSSecurityGroup"
 					}
 				],
 				"SourceDestCheck": "true",
-                "Tags": [
-                    {
+				"Tags": [{
 						"Key": "Name",
 						"Value": "Informatica Node 6 Network Interface"
 					}
@@ -994,18 +827,18 @@
 				}
 			}
 		},
+
 		"HadoopGateway": {
 			"Type": "AWS::EC2::Instance",
 			"Condition": "SingleNodeCnd",
 			"DependsOn": "Node1IPAssoc",
 			"Properties": {
 				"IamInstanceProfile": {
-					"Ref": "InstanceProfile"
+					"Ref": "InformaticaInstanceProfile"
 				},
 				"ImageId": {
 					"Fn::FindInMap": [
-                        "AWSAMIRegionMap",
-                        {
+						"AWSAMIRegionMap", {
 							"Ref": "AWS::Region"
 						},
 						"INFAEICCLUSTERHVM"
@@ -1013,8 +846,7 @@
 				},
 				"InstanceType": {
 					"Fn::FindInMap": [
-                        "ClusterSizeMapping",
-                        {
+						"ClusterSizeMapping", {
 							"Ref": "ICSClusterSize"
 						},
 						"InstanceType"
@@ -1024,16 +856,14 @@
 					"Ref": "KeyName"
 				},
 				"InstanceInitiatedShutdownBehavior": "stop",
-                "NetworkInterfaces": [
-                    {
+				"NetworkInterfaces": [{
 						"NetworkInterfaceId": {
 							"Ref": "Node1NetInterface"
 						},
 						"DeviceIndex": "0"
 					}
 				],
-                "Tags": [
-                    {
+				"Tags": [{
 						"Key": "Name",
 						"Value": "HadoopGateway-HadoopNode-1"
 					}
@@ -1046,8 +876,7 @@
 								"#!/bin/bash\n",
 								"function error_exit\n",
 								"{\n",
-                                " /opt/aws/bin/cfn-signal -e 1 '",
-                                {
+								" /opt/aws/bin/cfn-signal -e 1 '", {
 									"Ref": "WaitForClusterInstancesHandle"
 								},
 								"'\n",
@@ -1068,8 +897,7 @@
 								" fi\n",
 								"# Signal the status from cfn-init\n",
 								"\n",
-                                " /opt/aws/bin/cfn-signal -e 0 '",
-                                {
+								" /opt/aws/bin/cfn-signal -e 0 '", {
 									"Ref": "WaitForClusterInstancesHandle"
 								},
 								"'\n"
@@ -1078,6 +906,7 @@
 					}
 				}
 			}
+
 		},
 		"MultiNodeHadoopGateway": {
 			"Type": "AWS::EC2::Instance",
@@ -1085,12 +914,11 @@
 			"DependsOn": "Node1IPAssoc",
 			"Properties": {
 				"IamInstanceProfile": {
-					"Ref": "InstanceProfile"
+					"Ref": "InformaticaInstanceProfile"
 				},
 				"ImageId": {
 					"Fn::FindInMap": [
-                        "AWSAMIRegionMap",
-                        {
+						"AWSAMIRegionMap", {
 							"Ref": "AWS::Region"
 						},
 						"INFAEICCLUSTERHVM"
@@ -1098,8 +926,7 @@
 				},
 				"InstanceType": {
 					"Fn::FindInMap": [
-                        "ClusterSizeMapping",
-                        {
+						"ClusterSizeMapping", {
 							"Ref": "ICSClusterSize"
 						},
 						"InstanceType"
@@ -1109,16 +936,14 @@
 					"Ref": "KeyName"
 				},
 				"InstanceInitiatedShutdownBehavior": "stop",
-                "NetworkInterfaces": [
-                    {
+				"NetworkInterfaces": [{
 						"NetworkInterfaceId": {
 							"Ref": "Node1NetInterface"
 						},
 						"DeviceIndex": "0"
 					}
 				],
-                "Tags": [
-                    {
+				"Tags": [{
 						"Key": "Name",
 						"Value": "HadoopGateway-HadoopNode-1"
 					}
@@ -1131,8 +956,7 @@
 								"#!/bin/bash\n",
 								"function error_exit\n",
 								"{\n",
-                                " /opt/aws/bin/cfn-signal -e 1 '",
-                                {
+								" /opt/aws/bin/cfn-signal -e 1 '", {
 									"Ref": "WaitForClusterInstancesHandle"
 								},
 								"'\n",
@@ -1153,8 +977,7 @@
 								" fi\n",
 								"# Signal the status from cfn-init\n",
 								"\n",
-                                " /opt/aws/bin/cfn-signal -e 0 '",
-                                {
+								" /opt/aws/bin/cfn-signal -e 0 '", {
 									"Ref": "WaitForClusterInstancesHandle"
 								},
 								"'\n"
@@ -1170,12 +993,11 @@
 			"DependsOn": "Node2IPAssoc",
 			"Properties": {
 				"IamInstanceProfile": {
-					"Ref": "InstanceProfile"
+					"Ref": "InformaticaInstanceProfile"
 				},
 				"ImageId": {
 					"Fn::FindInMap": [
-                        "AWSAMIRegionMap",
-                        {
+						"AWSAMIRegionMap", {
 							"Ref": "AWS::Region"
 						},
 						"INFAEICCLUSTERHVM"
@@ -1183,8 +1005,7 @@
 				},
 				"InstanceType": {
 					"Fn::FindInMap": [
-                        "ClusterSizeMapping",
-                        {
+						"ClusterSizeMapping", {
 							"Ref": "ICSClusterSize"
 						},
 						"InstanceType"
@@ -1194,26 +1015,17 @@
 					"Ref": "KeyName"
 				},
 				"InstanceInitiatedShutdownBehavior": "stop",
-                "NetworkInterfaces": [
-                    {
+				"NetworkInterfaces": [{
 						"NetworkInterfaceId": {
 							"Ref": "Node2NetInterface"
 						},
 						"DeviceIndex": "0"
 					}
 				],
-                "Tags": [
-                    {
+				"Tags": [{
 						"Key": "Name",
-						"Value": {
-							"Fn::Join": [
-								"-",
-								[
-									"HadoopNode",
-									"2"
-								]
-							]
-						}
+						"Value": "HadoopNode-2"
+									
 					}
 				],
 				"UserData": {
@@ -1224,8 +1036,7 @@
 								"#!/bin/bash\n",
 								"function error_exit\n",
 								"{\n",
-                                " /opt/aws/bin/cfn-signal -e 1 '",
-                                {
+								" /opt/aws/bin/cfn-signal -e 1 '", {
 									"Ref": "WaitForClusterInstancesHandle"
 								},
 								"'\n",
@@ -1246,8 +1057,7 @@
 								" fi\n",
 								"# Signal the status from cfn-init\n",
 								"\n",
-                                " /opt/aws/bin/cfn-signal -e 0 '",
-                                {
+								" /opt/aws/bin/cfn-signal -e 0 '", {
 									"Ref": "WaitForClusterInstancesHandle"
 								},
 								"'\n"
@@ -1263,12 +1073,11 @@
 			"DependsOn": "Node3IPAssoc",
 			"Properties": {
 				"IamInstanceProfile": {
-					"Ref": "InstanceProfile"
+					"Ref": "InformaticaInstanceProfile"
 				},
 				"ImageId": {
 					"Fn::FindInMap": [
-                        "AWSAMIRegionMap",
-                        {
+						"AWSAMIRegionMap", {
 							"Ref": "AWS::Region"
 						},
 						"INFAEICCLUSTERHVM"
@@ -1276,8 +1085,7 @@
 				},
 				"InstanceType": {
 					"Fn::FindInMap": [
-                        "ClusterSizeMapping",
-                        {
+						"ClusterSizeMapping", {
 							"Ref": "ICSClusterSize"
 						},
 						"InstanceType"
@@ -1287,26 +1095,16 @@
 					"Ref": "KeyName"
 				},
 				"InstanceInitiatedShutdownBehavior": "stop",
-                "NetworkInterfaces": [
-                    {
+				"NetworkInterfaces": [{
 						"NetworkInterfaceId": {
 							"Ref": "Node3NetInterface"
 						},
 						"DeviceIndex": "0"
 					}
 				],
-                "Tags": [
-                    {
+				"Tags": [{
 						"Key": "Name",
-						"Value": {
-							"Fn::Join": [
-								"-",
-								[
-									"HadoopNode",
-									"3"
-								]
-							]
-						}
+						"Value": "HadoopNode-3"
 					}
 				],
 				"UserData": {
@@ -1317,8 +1115,7 @@
 								"#!/bin/bash\n",
 								"function error_exit\n",
 								"{\n",
-                                " /opt/aws/bin/cfn-signal -e 1 '",
-                                {
+								" /opt/aws/bin/cfn-signal -e 1 '", {
 									"Ref": "WaitForClusterInstancesHandle"
 								},
 								"'\n",
@@ -1339,8 +1136,7 @@
 								" fi\n",
 								"# Signal the status from cfn-init\n",
 								"\n",
-                                " /opt/aws/bin/cfn-signal -e 0 '",
-                                {
+								" /opt/aws/bin/cfn-signal -e 0 '", {
 									"Ref": "WaitForClusterInstancesHandle"
 								},
 								"'\n"
@@ -1356,12 +1152,11 @@
 			"DependsOn": "Node4IPAssoc",
 			"Properties": {
 				"IamInstanceProfile": {
-					"Ref": "InstanceProfile"
+					"Ref": "InformaticaInstanceProfile"
 				},
 				"ImageId": {
 					"Fn::FindInMap": [
-                        "AWSAMIRegionMap",
-                        {
+						"AWSAMIRegionMap", {
 							"Ref": "AWS::Region"
 						},
 						"INFAEICCLUSTERHVM"
@@ -1369,8 +1164,7 @@
 				},
 				"InstanceType": {
 					"Fn::FindInMap": [
-                        "ClusterSizeMapping",
-                        {
+						"ClusterSizeMapping", {
 							"Ref": "ICSClusterSize"
 						},
 						"InstanceType"
@@ -1380,26 +1174,16 @@
 					"Ref": "KeyName"
 				},
 				"InstanceInitiatedShutdownBehavior": "stop",
-                "NetworkInterfaces": [
-                    {
+				"NetworkInterfaces": [{
 						"NetworkInterfaceId": {
 							"Ref": "Node4NetInterface"
 						},
 						"DeviceIndex": "0"
 					}
 				],
-                "Tags": [
-                    {
+				"Tags": [{
 						"Key": "Name",
-						"Value": {
-							"Fn::Join": [
-								"-",
-								[
-									"HadoopNode",
-									"4"
-								]
-							]
-						}
+						"Value": "HadoopNode-4"
 					}
 				],
 				"UserData": {
@@ -1410,8 +1194,7 @@
 								"#!/bin/bash\n",
 								"function error_exit\n",
 								"{\n",
-                                " /opt/aws/bin/cfn-signal -e 1 '",
-                                {
+								" /opt/aws/bin/cfn-signal -e 1 '", {
 									"Ref": "WaitForClusterInstancesHandle"
 								},
 								"'\n",
@@ -1432,8 +1215,7 @@
 								" fi\n",
 								"# Signal the status from cfn-init\n",
 								"\n",
-                                " /opt/aws/bin/cfn-signal -e 0 '",
-                                {
+								" /opt/aws/bin/cfn-signal -e 0 '", {
 									"Ref": "WaitForClusterInstancesHandle"
 								},
 								"'\n"
@@ -1449,12 +1231,11 @@
 			"DependsOn": "Node5IPAssoc",
 			"Properties": {
 				"IamInstanceProfile": {
-					"Ref": "InstanceProfile"
+					"Ref": "InformaticaInstanceProfile"
 				},
 				"ImageId": {
 					"Fn::FindInMap": [
-                        "AWSAMIRegionMap",
-                        {
+						"AWSAMIRegionMap", {
 							"Ref": "AWS::Region"
 						},
 						"INFAEICCLUSTERHVM"
@@ -1462,8 +1243,7 @@
 				},
 				"InstanceType": {
 					"Fn::FindInMap": [
-                        "ClusterSizeMapping",
-                        {
+						"ClusterSizeMapping", {
 							"Ref": "ICSClusterSize"
 						},
 						"InstanceType"
@@ -1473,26 +1253,16 @@
 					"Ref": "KeyName"
 				},
 				"InstanceInitiatedShutdownBehavior": "stop",
-                "NetworkInterfaces": [
-                    {
+				"NetworkInterfaces": [{
 						"NetworkInterfaceId": {
 							"Ref": "Node5NetInterface"
 						},
 						"DeviceIndex": "0"
 					}
 				],
-                "Tags": [
-                    {
+				"Tags": [{
 						"Key": "Name",
-						"Value": {
-							"Fn::Join": [
-								"-",
-								[
-									"HadoopNode",
-									"5"
-								]
-							]
-						}
+						"Value": "HadoopNode-5"
 					}
 				],
 				"UserData": {
@@ -1503,8 +1273,7 @@
 								"#!/bin/bash\n",
 								"function error_exit\n",
 								"{\n",
-                                " /opt/aws/bin/cfn-signal -e 1 '",
-                                {
+								" /opt/aws/bin/cfn-signal -e 1 '", {
 									"Ref": "WaitForClusterInstancesHandle"
 								},
 								"'\n",
@@ -1525,8 +1294,7 @@
 								" fi\n",
 								"# Signal the status from cfn-init\n",
 								"\n",
-                                " /opt/aws/bin/cfn-signal -e 0 '",
-                                {
+								" /opt/aws/bin/cfn-signal -e 0 '", {
 									"Ref": "WaitForClusterInstancesHandle"
 								},
 								"'\n"
@@ -1542,12 +1310,11 @@
 			"DependsOn": "Node6IPAssoc",
 			"Properties": {
 				"IamInstanceProfile": {
-					"Ref": "InstanceProfile"
+					"Ref": "InformaticaInstanceProfile"
 				},
 				"ImageId": {
 					"Fn::FindInMap": [
-                        "AWSAMIRegionMap",
-                        {
+						"AWSAMIRegionMap", {
 							"Ref": "AWS::Region"
 						},
 						"INFAEICCLUSTERHVM"
@@ -1555,8 +1322,7 @@
 				},
 				"InstanceType": {
 					"Fn::FindInMap": [
-                        "ClusterSizeMapping",
-                        {
+						"ClusterSizeMapping", {
 							"Ref": "ICSClusterSize"
 						},
 						"InstanceType"
@@ -1566,27 +1332,17 @@
 					"Ref": "KeyName"
 				},
 				"InstanceInitiatedShutdownBehavior": "stop",
-                "NetworkInterfaces": [
-                    {
+				"NetworkInterfaces": [{
 						"NetworkInterfaceId": {
 							"Ref": "Node6NetInterface"
 						},
 						"DeviceIndex": "0"
 					}
 				],
-                "Tags": [
-                    {
+				"Tags": [{
 						"Key": "Name",
-						"Value": {
-							"Fn::Join": [
-								"-",
-								[
-									"HadoopNode",
-									"6"
-								]
-							]
+						"Value": "HadoopNode-6"
 						}
-					}
 				],
 				"UserData": {
 					"Fn::Base64": {
@@ -1596,8 +1352,7 @@
 								"#!/bin/bash\n",
 								"function error_exit\n",
 								"{\n",
-                                " /opt/aws/bin/cfn-signal -e 1 '",
-                                {
+								" /opt/aws/bin/cfn-signal -e 1 '", {
 									"Ref": "WaitForClusterInstancesHandle"
 								},
 								"'\n",
@@ -1618,8 +1373,7 @@
 								" fi\n",
 								"# Signal the status from cfn-init\n",
 								"\n",
-                                " /opt/aws/bin/cfn-signal -e 0 '",
-                                {
+								" /opt/aws/bin/cfn-signal -e 0 '", {
 									"Ref": "WaitForClusterInstancesHandle"
 								},
 								"'\n"
@@ -1629,13 +1383,14 @@
 				}
 			}
 		},
+
 		"EMRCluster": {
 			"Type": "AWS::EMR::Cluster",
 			"Properties": {
 				"Instances": {
+
 					"MasterInstanceGroup": {
-                        "Configurations": [
-                            {
+						"Configurations": [{
 								"Classification": "yarn-site",
 								"ConfigurationProperties": {
 									"yarn.scheduler.minimum-allocation-mb": "256",
@@ -1644,8 +1399,7 @@
 									"yarn.scheduler.maximum-allocation-mb": "8192",
 									"yarn.nodemanager.vmem-check-enabled": "false"
 								}
-                            },
-                            {
+							}, {
 								"Classification": "core-site",
 								"ConfigurationProperties": {
 									"hadoop.proxyuser.ec2-user.hosts": "*",
@@ -1654,14 +1408,19 @@
 							}
 						],
 						"EbsConfiguration": {
-                            "EbsBlockDeviceConfigs": [
-                                {
+							"EbsBlockDeviceConfigs":
+							[{
 									"VolumeSpecification": {
+
 										"SizeInGB": "200",
+
 										"VolumeType": "standard"
+
 									}
+
 								}
 							]
+
 						},
 						"InstanceCount": 1,
 						"InstanceType": {
@@ -1671,8 +1430,7 @@
 						"Name": "Master"
 					},
 					"CoreInstanceGroup": {
-                        "Configurations": [
-                            {
+						"Configurations": [{
 								"Classification": "yarn-site",
 								"ConfigurationProperties": {
 									"yarn.scheduler.minimum-allocation-mb": "256",
@@ -1681,8 +1439,7 @@
 									"yarn.scheduler.maximum-allocation-mb": "8192",
 									"yarn.nodemanager.vmem-check-enabled": "false"
 								}
-                            },
-                            {
+							}, {
 								"Classification": "core-site",
 								"ConfigurationProperties": {
 									"hadoop.proxyuser.ec2-user.hosts": "*",
@@ -1691,14 +1448,19 @@
 							}
 						],
 						"EbsConfiguration": {
-                            "EbsBlockDeviceConfigs": [
-                                {
+							"EbsBlockDeviceConfigs":
+							[{
 									"VolumeSpecification": {
+
 										"SizeInGB": 200,
+
 										"VolumeType": "standard"
+
 									}
+
 								}
 							]
+
 						},
 						"InstanceCount": {
 							"Ref": "EMRCoreNodes"
@@ -1716,20 +1478,12 @@
 					"Ec2SubnetId": {
 						"Ref": "InformaticaServerSubnetID"
 					},
-                    "AdditionalMasterSecurityGroups": [
-                        {
+					"AdditionalMasterSecurityGroups": [{
 							"Ref": "InfaDomainEMRSecurityGroup"
-                        },
-                        {
-							"Ref": "RemoteAccessEMRSecurityGroup"
 						}
 					],
-                    "AdditionalSlaveSecurityGroups": [
-                        {
+					"AdditionalSlaveSecurityGroups": [{
 							"Ref": "InfaDomainEMRSecurityGroup"
-                        },
-                        {
-							"Ref": "RemoteAccessEMRSecurityGroup"
 						}
 					]
 				},
@@ -1737,22 +1491,19 @@
 					"Ref": "EMRClusterName"
 				},
 				"JobFlowRole": {
-					"Ref": "InstanceProfile"
+					"Ref": "InformaticaInstanceProfile"
 				},
 				"ReleaseLabel": "emr-5.4.0",
 				"ServiceRole": "EMR_DefaultRole",
 				"LogUri": {
 					"Fn::If": [
-                        "NoEMRLogBucketCondition",
-                        {
+						"NoEMRLogBucketCondition", {
 							"Ref": "AWS::NoValue"
-                        },
-                        {
+						}, {
 							"Fn::Join": [
 								"",
 								[
-                                    "s3://",
-                                    {
+									"s3://", {
 										"Ref": "EMRLogBucket"
 									}
 								]
@@ -1760,23 +1511,19 @@
 						}
 					]
 				},
-                "Applications": [
-                    {
+				"Applications": [{
 						"Name": "Hive"
-                    },
-                    {
+					}, {
 						"Name": "Hadoop"
 					}
 				],
-                "Tags": [
-                    {
+				"Tags": [{
 						"Key": "prod",
 						"Value": {
 							"Fn::Join": [
 								"",
 								[
-                                    "EMR-",
-                                    {
+									"EMR-", {
 										"Ref": "EMRClusterName"
 									}
 								]
@@ -1787,6 +1534,7 @@
 				"VisibleToAllUsers": true
 			}
 		},
+
 		"RedshiftCluster": {
 			"Type": "AWS::Redshift::Cluster",
 			"Properties": {
@@ -1794,12 +1542,9 @@
 					"Ref": "RedshiftClusterType"
 				},
 				"NumberOfNodes": {
-                    "Fn::If": [
-                        "IsMultiNodeRedShiftCluster",
-                        {
+					"Fn::If": ["IsMultiNodeRedShiftCluster", {
 							"Ref": "RedshiftNumberOfNodes"
-                        },
-                        {
+						}, {
 							"Ref": "AWS::NoValue"
 						}
 					]
@@ -1819,28 +1564,22 @@
 				"ClusterParameterGroupName": {
 					"Ref": "RedshiftClusterParameterGroup"
 				},
-                "VpcSecurityGroupIds": [
-                    {
-						"Ref": "SecurityGroup"
+				"VpcSecurityGroupIds": [{
+						"Ref": "RedShiftSecurityGroup"
 					}
 				],
 				"ClusterSubnetGroupName": {
 					"Ref": "RedshiftClusterSubnetGroup"
 				},
-                "IamRoles": [
-                    {
-                        "Fn::GetAtt": [
-                            "InstanceRoleRedShift",
-                            "Arn"
-                        ]
+				"IamRoles": [{
+						"Fn::GetAtt": ["InstanceRoleRedShift", "Arn"]
 					}
 				],
 				"PubliclyAccessible": "true",
 				"Port": {
 					"Ref": "RedshiftDatabasePort"
 				},
-                "Tags": [
-                    {
+				"Tags": [{
 						"Key": "Name",
 						"Value": "Amazon Redshift Cluster"
 					}
@@ -1851,138 +1590,197 @@
 			"Type": "AWS::Redshift::ClusterSubnetGroup",
 			"Properties": {
 				"Description": "Cluster subnet group",
-                "SubnetIds": [
-                    {
+				"SubnetIds": [{
 						"Ref": "InformaticaServerSubnetID"
 					}
 				]
 			}
 		},
 		"InfaDomainEMRSecurityGroup": {
+
 			"Type": "AWS::EC2::SecurityGroup",
+
 			"Properties": {
+
 				"GroupDescription": "Enable Informatica Domain Access in EMR",
+
 				"VpcId": {
+
 					"Ref": "VPCID"
+
 				},
+
 				"SecurityGroupIngress": [
 					{
+
 						"IpProtocol": "tcp",
+
 						"FromPort": "8020",
+
 						"ToPort": "8020",
+
 						"SourceSecurityGroupId": {
+
 							"Ref": "InfaDomainSecurityGroup"
+
 						}
+
 					},
 					{
-						"IpProtocol": "-1",
-						"FromPort": "0",
-						"ToPort": "65535",
-						"SourceSecurityGroupId": {
-							"Ref": "InfaDomainSecurityGroup"
-						}
-					},
-					{
+
 						"IpProtocol": "tcp",
+
 						"FromPort": "8032",
+
 						"ToPort": "8032",
+
 						"SourceSecurityGroupId": {
+
 							"Ref": "InfaDomainSecurityGroup"
+
 						}
+
 					},
 					{
+
 						"IpProtocol": "tcp",
+
 						"FromPort": "9083",
+
 						"ToPort": "9083",
+
 						"SourceSecurityGroupId": {
+
 							"Ref": "InfaDomainSecurityGroup"
+
 						}
+
 					},
 					{
+
 						"IpProtocol": "tcp",
+
 						"FromPort": "10000",
+
 						"ToPort": "10000",
+
 						"SourceSecurityGroupId": {
+
 							"Ref": "InfaDomainSecurityGroup"
+
 						}
+
 					},
 					{
+
 						"IpProtocol": "tcp",
+
 						"FromPort": "12300",
+
 						"ToPort": "12600",
+
 						"SourceSecurityGroupId": {
+
 							"Ref": "InfaDomainSecurityGroup"
+
 						}
+
 					},
 					{
+
 						"IpProtocol": "tcp",
+
 						"FromPort": "8300",
+
 						"ToPort": "8300",
+
 						"SourceSecurityGroupId": {
+
 							"Ref": "InfaDomainSecurityGroup"
+
 						}
+
 					},
 					{
+
 						"IpProtocol": "tcp",
+
 						"FromPort": "50010",
+
 						"ToPort": "50010",
+
 						"SourceSecurityGroupId": {
+
 							"Ref": "InfaDomainSecurityGroup"
+
 						}
+
 					},
 					{
+
 						"IpProtocol": "tcp",
+
 						"FromPort": "9090",
+
 						"ToPort": "9090",
+
 						"SourceSecurityGroupId": {
+
 							"Ref": "InfaDomainSecurityGroup"
+
 						}
+
 					},
 					{
+
 						"IpProtocol": "tcp",
+
 						"FromPort": "10020",
+
 						"ToPort": "10020",
+
 						"SourceSecurityGroupId": {
+
 							"Ref": "InfaDomainSecurityGroup"
+
 						}
+
 					},
 					{
+
 						"IpProtocol": "tcp",
+
 						"FromPort": "9080",
+
 						"ToPort": "9080",
+
 						"SourceSecurityGroupId": {
+
 							"Ref": "InfaDomainSecurityGroup"
+
 						}
-					}
-				]
-			}
-		},
-		"RemoteAccessEMRSecurityGroup": {
-			"Type": "AWS::EC2::SecurityGroup",
-			"Properties": {
-				"GroupDescription": "Enable Informatica Domain Access in EMR",
-				"VpcId": {
-					"Ref": "VPCID"
-				},
-				"SecurityGroupIngress": [
-					{
-						"IpProtocol": "-1",
-						"FromPort": "0",
-						"ToPort": "65535",
-						"CidrIp": {
-							"Ref": "IPAddressRange"
-						}
+
 					},
 					{
+
 						"IpProtocol": "tcp",
+
 						"FromPort": "10000",
+
 						"ToPort": "10000",
+
 						"CidrIp": {
+
 							"Ref": "IPAddressRange"
+
 						}
+
 					}
+
 				]
+
 			}
+
 		},
 		"InfaDomainSecurityGroup": {
 			"Type": "AWS::EC2::SecurityGroup",
@@ -1992,103 +1790,77 @@
 					"Ref": "VPCID"
 				},
 				"SecurityGroupIngress": [
-					{
-						"IpProtocol": "-1",
-						"FromPort": "0",
-						"ToPort": "65535",
-						"CidrIp": {
-							"Ref": "IPAddressRange"
-						}
-                    },
-                    {
+					 {
 						"IpProtocol": "tcp",
 						"FromPort": "6006",
 						"ToPort": "6006",
 						"CidrIp": {
 							"Ref": "IPAddressRange"
 						}
-                    },
-                    {
+					}, {
 						"IpProtocol": "tcp",
 						"FromPort": "6008",
 						"ToPort": "6008",
 						"CidrIp": {
 							"Ref": "IPAddressRange"
 						}
-                    },
-                    {
+					}, {
 						"IpProtocol": "tcp",
 						"FromPort": "6014",
 						"ToPort": "6114",
 						"CidrIp": {
 							"Ref": "IPAddressRange"
 						}
-                    },
-                    {
+					}, {
 						"IpProtocol": "tcp",
 						"FromPort": "8095",
 						"ToPort": "8095",
 						"CidrIp": {
 							"Ref": "IPAddressRange"
 						}
-                    },
-                    {
+					}, {
 						"IpProtocol": "tcp",
 						"FromPort": "8785",
 						"ToPort": "8785",
 						"CidrIp": {
 							"Ref": "IPAddressRange"
 						}
-                    },
-                    {
+					}, {
 						"IpProtocol": "tcp",
 						"FromPort": "8085",
 						"ToPort": "8085",
 						"CidrIp": {
 							"Ref": "IPAddressRange"
 						}
-                    },
-                    {
+					}, {
 						"IpProtocol": "tcp",
 						"FromPort": "9085",
 						"ToPort": "9085",
 						"CidrIp": {
 							"Ref": "IPAddressRange"
 						}
-                    },
-                    {
+					}, {
 						"IpProtocol": "tcp",
 						"FromPort": "8089",
 						"ToPort": "8089",
 						"CidrIp": {
 							"Ref": "IPAddressRange"
 						}
-                    },
-                    {
+					}, {
 						"IpProtocol": "tcp",
 						"FromPort": "443",
 						"ToPort": "443",
 						"CidrIp": {
 							"Ref": "IPAddressRange"
 						}
-                    },
-                    {
+					}, {
 						"IpProtocol": "tcp",
 						"FromPort": "22",
 						"ToPort": "22",
 						"CidrIp": {
 							"Ref": "IPAddressRange"
 						}
-					},
-					{
-						"IpProtocol": "-1",
-						"FromPort": "0",
-						"ToPort": "65535",
-						"CidrIp": {
-							"Ref": "IPAddressRange"
-						}
-                    },
-                    {
+					}, {
 						"IpProtocol": "udp",
 						"FromPort": "1521",
 						"ToPort": "1521",
@@ -2099,25 +1871,24 @@
 				]
 			}
 		},
+
 		"RedshiftClusterParameterGroup": {
 			"Type": "AWS::Redshift::ClusterParameterGroup",
 			"Properties": {
 				"Description": "Cluster parameter group",
 				"ParameterGroupFamily": "redshift-1.0",
-                "Parameters": [
-                    {
+				"Parameters": [{
 						"ParameterName": "enable_user_activity_logging",
 						"ParameterValue": "true"
 					}
 				]
 			}
 		},
-		"SecurityGroup": {
+		"RedShiftSecurityGroup": {
 			"Type": "AWS::EC2::SecurityGroup",
 			"Properties": {
 				"GroupDescription": "Security group",
-                "SecurityGroupIngress": [
-                    {
+				"SecurityGroupIngress": [{
 						"CidrIp": {
 							"Ref": "IPAddressRange"
 						},
@@ -2130,13 +1901,59 @@
 						"IpProtocol": "tcp"
 					},
 					{
-						"IpProtocol": "-1",
-						"FromPort": "0",
-						"ToPort": "65535",
+
+						"IpProtocol": "tcp",
+
+						"FromPort": {
+							"Ref": "RedshiftDatabasePort"
+						},
+						"ToPort": {
+							"Ref": "RedshiftDatabasePort"
+						},
 						"SourceSecurityGroupId": {
-							"Ref": "InfaDomainSecurityGroup"
+
+							"Ref": "InfaDomainEMRSecurityGroup"
+
 						}
+
+					},
+					{
+
+						"IpProtocol": "tcp",
+
+						"FromPort": {
+							"Ref": "RedshiftDatabasePort"
+						},
+						"ToPort": {
+							"Ref": "RedshiftDatabasePort"
+						},
+
+						"SourceSecurityGroupId": {
+
+							"Ref": "InfaDomainSecurityGroup"
+
+						}
+
+					},
+					{
+
+						"IpProtocol": "tcp",
+
+						"FromPort": {
+							"Ref": "RedshiftDatabasePort"
+						},
+						"ToPort": {
+							"Ref": "RedshiftDatabasePort"
+						},
+
+						"SourceSecurityGroupId": {
+
+							"Ref": "AdditionalICSSecurityGroup"
+
+						}
+
 					}
+					
 				],
 				"VpcId": {
 					"Ref": "VPCID"
@@ -2146,14 +1963,14 @@
 		"WaitForClusterInstancesHandle": {
 			"Type": "AWS::CloudFormation::WaitConditionHandle",
 			"Properties": {}
+
 		},
 		"WaitForClusterInstancesCondition": {
 			"Type": "AWS::CloudFormation::WaitCondition",
 			"Properties": {
 				"Count": {
 					"Fn::FindInMap": [
-                        "ClusterSizeMapping",
-                        {
+						"ClusterSizeMapping", {
 							"Ref": "ICSClusterSize"
 						},
 						"NumberOfInstances"
@@ -2165,6 +1982,7 @@
 				"Timeout": "3600"
 			}
 		},
+
 		"AdditionalICSSecurityGroup": {
 			"Type": "AWS::EC2::SecurityGroup",
 			"Properties": {
@@ -2172,49 +1990,36 @@
 				"VpcId": {
 					"Ref": "VPCID"
 				},
-                "SecurityGroupIngress": [
-                    {
+				"SecurityGroupIngress": [{
 						"IpProtocol": "tcp",
 						"FromPort": "8080",
 						"ToPort": "8080",
 						"CidrIp": {
 							"Ref": "IPAddressRange"
 						}
-                    },
-                    {
+					}, {
 						"IpProtocol": "tcp",
 						"FromPort": "8088",
 						"ToPort": "8088",
 						"CidrIp": {
 							"Ref": "IPAddressRange"
 						}
-                    },
-                    {
-						"IpProtocol": "-1",
-						"FromPort": "0",
-						"ToPort": "65535",
-						"CidrIp": {
-							"Ref": "IPAddressRange"
-						}
-                    },
-                    {
+					}, {
 						"IpProtocol": "tcp",
 						"FromPort": "50070",
 						"ToPort": "50070",
 						"CidrIp": {
 							"Ref": "IPAddressRange"
 						}
-                    },
-                    {
+					}, {
 						"IpProtocol": "tcp",
 						"FromPort": "19888",
 						"ToPort": "19888",
 						"CidrIp": {
 							"Ref": "IPAddressRange"
 						}
-                    },
-                    {
-						"IpProtocol": "-1",
+					}, {
+						"IpProtocol": "tcp",
 						"FromPort": "0",
 						"ToPort": "65535",
 						"SourceSecurityGroupId": {
@@ -2223,9 +2028,8 @@
 								"GroupId"
 							]
 						}
-                    },
-                    {
-						"IpProtocol": "-1",
+					}, {
+						"IpProtocol": "tcp",
 						"FromPort": "0",
 						"ToPort": "65535",
 						"SourceSecurityGroupId": {
@@ -2248,22 +2052,14 @@
 			"Type": "AWS::RDS::DBInstance",
 			"Properties": {
 				"AllocatedStorage": "200",
-				"MultiAZ": {
-					"Fn::If": [
-						"SupportMultiAZCnd",
-                        "true",
-                        {
-							"Ref": "AWS::NoValue"
-						}
-					]
-				},
+				"MultiAZ": "true",
 				"StorageType": "gp2",
+
 				"LicenseModel": "license-included",
 				"DBInstanceClass": "db.m4.2xlarge",
 				"DBSnapshotIdentifier": {
 					"Fn::FindInMap": [
-                        "AWSAMIRegionMap",
-                        {
+						"AWSAMIRegionMap", {
 							"Ref": "AWS::Region"
 						},
 						"INFADBHVM"
@@ -2272,181 +2068,26 @@
 				"DBSubnetGroupName": {
 					"Ref": "InfaDBSubnetGroup"
 				},
-                "VPCSecurityGroups": [
-                    {
+				"VPCSecurityGroups": [{
 						"Ref": "InfaDBSecurityGroup"
 					}
 				],
 				"Engine": "oracle-se2",
 				"PubliclyAccessible": "true",
 				"MasterUserPassword": {
+
 					"Ref": "DBPassword"
+
 				},
 				"MasterUsername": {
+
 					"Ref": "DBUser"
+
 				}
 			}
+
 		},
-		"InboundRule": {
-			"Type": "AWS::EC2::SecurityGroupIngress",
-			"Properties": {
-				"IpProtocol": "-1",
-				"FromPort": "0",
-				"ToPort": "65535",
-				"SourceSecurityGroupId": {
-					"Fn::GetAtt": [
-						"InfaDomainSecurityGroup",
-						"GroupId"
-					]
-				},
-				"GroupId": {
-					"Fn::GetAtt": [
-						"InfaDomainSecurityGroup",
-						"GroupId"
-					]
-				}
-			}
-		},
-		"InboundRuleDB": {
-			"Type": "AWS::EC2::SecurityGroupIngress",
-			"Properties": {
-				"IpProtocol": "-1",
-				"FromPort": "0",
-				"ToPort": "65535",
-				"SourceSecurityGroupId": {
-					"Fn::GetAtt": [
-						"InfaDBSecurityGroup",
-						"GroupId"
-					]
-				},
-				"GroupId": {
-					"Fn::GetAtt": [
-						"InfaDBSecurityGroup",
-						"GroupId"
-					]
-				}
-			}
-		},
-		"InboundRuleEMR": {
-			"Type": "AWS::EC2::SecurityGroupIngress",
-			"Properties": {
-				"IpProtocol": "-1",
-				"FromPort": "0",
-				"ToPort": "65535",
-				"SourceSecurityGroupId": {
-					"Fn::GetAtt": [
-						"InfaDomainEMRSecurityGroup",
-						"GroupId"
-					]
-				},
-				"GroupId": {
-					"Fn::GetAtt": [
-						"InfaDomainEMRSecurityGroup",
-						"GroupId"
-					]
-				}
-			}
-		},
-		"InboundRuleICS": {
-			"Type": "AWS::EC2::SecurityGroupIngress",
-			"Properties": {
-				"IpProtocol": "-1",
-				"FromPort": "0",
-				"ToPort": "65535",
-				"SourceSecurityGroupId": {
-					"Fn::GetAtt": [
-						"AdditionalICSSecurityGroup",
-						"GroupId"
-					]
-				},
-				"GroupId": {
-					"Fn::GetAtt": [
-						"AdditionalICSSecurityGroup",
-						"GroupId"
-					]
-				}
-			}
-		},
-		"InboundRuleICSDomain": {
-			"Type": "AWS::EC2::SecurityGroupIngress",
-			"Properties": {
-				"IpProtocol": "-1",
-				"FromPort": "0",
-				"ToPort": "65535",
-				"SourceSecurityGroupId": {
-					"Fn::GetAtt": [
-						"AdditionalICSSecurityGroup",
-						"GroupId"
-					]
-				},
-				"GroupId": {
-					"Fn::GetAtt": [
-						"InfaDomainSecurityGroup",
-						"GroupId"
-					]
-				}
-			}
-		},
-		"InboundRuleRedShift": {
-			"Type": "AWS::EC2::SecurityGroupIngress",
-			"Properties": {
-				"IpProtocol": "-1",
-				"FromPort": "0",
-				"ToPort": "65535",
-				"SourceSecurityGroupId": {
-					"Fn::GetAtt": [
-						"SecurityGroup",
-						"GroupId"
-					]
-				},
-				"GroupId": {
-					"Fn::GetAtt": [
-						"SecurityGroup",
-						"GroupId"
-					]
-				}
-			}
-		},
-		"InboundRuleEMRAll": {
-			"Type": "AWS::EC2::SecurityGroupIngress",
-			"Properties": {
-				"IpProtocol": "-1",
-				"FromPort": "0",
-				"ToPort": "65535",
-				"SourceSecurityGroupId": {
-					"Fn::GetAtt": [
-						"InfaDomainEMRSecurityGroup",
-						"GroupId"
-					]
-				},
-				"GroupId": {
-					"Fn::GetAtt": [
-						"InfaDomainSecurityGroup",
-						"GroupId"
-					]
-				}
-			}
-		},
-		"InboundRuleIHSDomainAll": {
-			"Type": "AWS::EC2::SecurityGroupIngress",
-			"Properties": {
-				"IpProtocol": "-1",
-				"FromPort": "0",
-				"ToPort": "65535",
-				"SourceSecurityGroupId": {
-					"Fn::GetAtt": [
-						"InfaDomainSecurityGroup",
-						"GroupId"
-					]
-				},
-				"GroupId": {
-					"Fn::GetAtt": [
-						"AdditionalICSSecurityGroup",
-						"GroupId"
-					]
-				}
-			}
-		},
+
 		"InfaDBSubnetGroup": {
 			"Type": "AWS::RDS::DBSubnetGroup",
 			"Properties": {
@@ -2465,25 +2106,39 @@
 				},
 				"SecurityGroupIngress": [
 					{
-						"IpProtocol": "-1",
-						"FromPort": "0",
-						"ToPort": "65535",
+						"IpProtocol": "tcp",
+						"FromPort": "1521",
+						"ToPort": "1521",
 						"SourceSecurityGroupId": {
-							"Fn::GetAtt": [
-								"InfaDomainSecurityGroup",
-								"GroupId"
-							]
-						}
+                            "Ref": "InfaDomainSecurityGroup"
+                        }
+					},
+					{
+						"IpProtocol": "tcp",
+						"FromPort": "1521",
+						"ToPort": "1521",
+						"SourceSecurityGroupId": {
+                            "Ref": "InfaDomainEMRSecurityGroup"
+                        }
+					},
+					{
+						"IpProtocol": "tcp",
+						"FromPort": "1521",
+						"ToPort": "1521",
+						"SourceSecurityGroupId": {
+                            "Ref": "AdditionalICSSecurityGroup"
+                        }
 					}
+
 				]
 			}
 		},
+
 		"InstanceRoleRedShift": {
 			"Type": "AWS::IAM::Role",
 			"Properties": {
 				"AssumeRolePolicyDocument": {
-                    "Statement": [
-                        {
+					"Statement": [{
 							"Effect": "Allow",
 							"Principal": {
 								"Service": [
@@ -2496,19 +2151,17 @@
 						}
 					]
 				},
-                "ManagedPolicyArns": [
-                    "arn:aws:iam::aws:policy/AmazonS3FullAccess",
-                    "arn:aws:iam::aws:policy/AWSGlueConsoleFullAccess"
-                ],
+				"ManagedPolicyArns": ["arn:aws:iam::aws:policy/AmazonS3FullAccess", "arn:aws:iam::aws:policy/AWSGlueConsoleFullAccess"],
 				"Path": "/"
 			}
+
 		},
-		"InstanceRole": {
+
+		"InformaticaInstanceRole": {
 			"Type": "AWS::IAM::Role",
 			"Properties": {
 				"AssumeRolePolicyDocument": {
-                    "Statement": [
-                        {
+					"Statement": [{
 							"Effect": "Allow",
 							"Principal": {
 								"Service": [
@@ -2521,52 +2174,29 @@
 						}
 					]
 				},
-                "ManagedPolicyArns": [
-                    "arn:aws:iam::aws:policy/AdministratorAccess",
-                    "arn:aws:iam::aws:policy/AmazonS3FullAccess",
-                    "arn:aws:iam::aws:policy/AmazonRedshiftFullAccess",
-                    "arn:aws:iam::aws:policy/AmazonEC2FullAccess",
-                    "arn:aws:iam::aws:policy/AmazonElasticMapReduceFullAccess"
+				"ManagedPolicyArns": ["arn:aws:iam::aws:policy/IAMFullAccess", "arn:aws:iam::aws:policy/AmazonS3FullAccess", "arn:aws:iam::aws:policy/AmazonRedshiftFullAccess", "arn:aws:iam::aws:policy/AmazonEC2FullAccess", "arn:aws:iam::aws:policy/AmazonElasticMapReduceFullAccess"
 				],
 				"Path": "/"
 			}
+
 		},
+
 		"InformaticaS3User": {
 			"Type": "AWS::IAM::User",
 			"Properties": {
-                "Policies": [
-                    {
+				"Policies": [{
 						"PolicyName": "S3DatalakeAccessPolicy",
 						"PolicyDocument": {
 							"Version": "2012-10-17",
-                            "Statement": [
-                                {
+							"Statement": [{
 									"Action": [
 										"s3:*"
 									],
-                                    "Resource": [
-                                        {
-											"Fn::Join": [
-												"",
-												[
-                                                    "arn:aws:s3:::",
-                                                    {
-														"Ref": "S3BucketName"
-													}
-                                                ]
-                                            ]
-                                        },
-                                        {
-											"Fn::Join": [
-												"",
-												[
-                                                    "arn:aws:s3:::",
-                                                    {
-														"Ref": "S3BucketName"
-													},
-													"/*"
-                                                ]
-                                            ]
+									"Resource": [{
+
+								"Fn::Sub": "arn:aws:s3:::${S3BucketName}",
+								"Fn::Sub": "arn:aws:s3:::${S3BucketName}/*"
+
 										}
 									],
 									"Effect": "Allow"
@@ -2585,11 +2215,11 @@
 				}
 			}
 		},
+
 		"S3BucketName": {
 			"Type": "AWS::S3::Bucket",
 			"Properties": {
-                "Tags": [
-                    {
+				"Tags": [{
 						"Key": "Name",
 						"Value": "Amazon S3"
 					}
@@ -2602,40 +2232,19 @@
 			"Properties": {
 				"PolicyName": "S3Download",
 				"PolicyDocument": {
-                    "Statement": [
-                        {
+					"Statement": [{
 							"Action": [
 								"s3:Get*",
 								"s3:GetObject",
-								"s3:List*",
-								"s3:*"
+								"s3:List*"
+								
 							],
 							"Effect": "Allow",
-                            "Resource": [
-                                {
-									"Fn::Join": [
-										"",
-										[
-                                            "arn:",
-                                            {
-												"Fn::FindInMap": [
-                                                    "AWSInfoRegionMap",
-                                                    {
-														"Ref": "AWS::Region"
-													},
-													"Partition"
-												]
-											},
-                                            ":s3:::",
-                                            {
-												"Ref": "InformaticaKeyS3Bucket"
-											},
-                                            "/",
-                                            {
-												"Ref": "InformaticaKeyName"
-											}
-										]
-									]
+							"Resource": [{
+									
+							"Fn::Sub": "arn:aws:s3:::${InformaticaKeyS3Bucket}/${InformaticaKeyName}"
+
+
 								}
 							]
 						},
@@ -2645,47 +2254,33 @@
 								"s3:List*",
 								"s3:Put*"
 							],
+
 							"Effect": "Allow",
-                            "Resource": [
-                                {
-									"Fn::Join": [
-										"",
-										[
-                                            "arn:",
-                                            {
-												"Fn::FindInMap": [
-                                                    "AWSInfoRegionMap",
-                                                    {
-														"Ref": "AWS::Region"
-													},
-													"Partition"
-												]
-											},
-                                            ":s3:::",
-                                            {
-												"Ref": "S3BucketName"
-											}
-										]
-									]
+
+							"Resource": [{
+							
+								"Fn::Sub": "arn:aws:s3:::${S3BucketName}"
+
+
 								}
 							]
+
 						}
 					]
+
 				},
-                "Roles": [
-                    {
-						"Ref": "InstanceRole"
+				"Roles": [{
+						"Ref": "InformaticaInstanceRole"
 					}
 				]
 			}
 		},
-		"InstanceProfile": {
+		"InformaticaInstanceProfile": {
 			"Type": "AWS::IAM::InstanceProfile",
 			"Properties": {
 				"Path": "/",
-                "Roles": [
-                    {
-						"Ref": "InstanceRole"
+				"Roles": [{
+						"Ref": "InformaticaInstanceRole"
 					}
 				]
 			}
@@ -2703,14 +2298,12 @@
 				"SubnetId": {
 					"Ref": "InformaticaServerSubnetID"
 				},
-                "GroupSet": [
-                    {
+				"GroupSet": [{
 						"Ref": "InfaDomainSecurityGroup"
 					}
 				],
 				"SourceDestCheck": "true",
-                "Tags": [
-                    {
+				"Tags": [{
 						"Key": "Name",
 						"Value": "Informatica Network Interface"
 					}
@@ -2738,10 +2331,9 @@
 					"S3AccessCreds": {
 						"type": "S3",
 						"roleName": {
-							"Ref": "InstanceRole"
+							"Ref": "InformaticaInstanceRole"
 						},
-                        "buckets": [
-                            {
+						"buckets": [{
 								"Ref": "InformaticaKeyS3Bucket"
 							}
 						]
@@ -2763,14 +2355,12 @@
 										"",
 										[
 											"[main]\n",
-                                            "stack=",
-                                            {
+											"stack=", {
 												"Ref": "AWS::StackName"
 											},
 											"\n",
 											"interval=1\n",
-                                            "region=",
-                                            {
+											"region=", {
 												"Ref": "AWS::Region"
 											},
 											"\n"
@@ -2789,13 +2379,11 @@
 											"[cfn-auto-reloader-hook]\n",
 											"triggers=post.update\n",
 											"path=Resources.AdministrationServer.Metadata.AWS::CloudFormation::Init\n",
-                                            "action=/opt/aws/bin/cfn-init -s ",
-                                            {
+											"action=/opt/aws/bin/cfn-init -s ", {
 												"Ref": "AWS::StackId"
 											},
 											" -r AdministrationServer ",
-                                            " --region ",
-                                            {
+											" --region ", {
 												"Ref": "AWS::Region"
 											},
 											"\n",
@@ -2808,19 +2396,23 @@
 								"group": "ec2-user"
 							},
 							"/home/ec2-user/Mercury_Setup/scanner1.sh": {
+
 								"content": {
+
 									"Fn::Join": [
 										"",
 										[
 											"curl -u Administrator:Administrator -H \"Content-Type: application/json\" -X POST -d '{\"resourceIdentifier\":{\"resourceName\":\"'$1'\",\"description\":\" \",\"resourceTypeId\":\"amazons3\",\"resourceTypeName\":\"Amazon S3\",\"resourceTypeVersion\":\"\"},\"scannerConfigurations\":[{\"scanner\":{\"scannerId\":\"AmazonS3Scanner\",\"providerTypeId\":\"CORE\",\"providerTypeName\":\"Source Metadata\"},\"enabled\":true,\"configOptions\":[{\"optionId\":\"URI\",\"optionValues\":[\"'$1'.s3.amazonaws.com\"]},{\"optionId\":\"SourceDirectory\",\"optionValues\":[\"/\"]},{\"optionId\":\"Bucket\",\"optionValues\":[\"'$1'\"]},{\"optionId\":\"FileType\",\"optionValues\":[\"All\"]},{\"optionId\":\"IncludeUnsupportedTypes\",\"optionValues\":[false]},{\"optionId\":\"IncludeSubdirectory\",\"optionValues\":[false]},{\"optionId\":\"Memory\",\"optionValues\":[\"Low\"]},{\"optionId\":\"AWSSecretAccessKey\",\"optionValues\":[\"'$9'\"]},{\"optionId\":\"AWSAccessKeyID\",\"optionValues\":[\"'${10}'\"]}]},{\"scanner\":{\"scannerId\":\"CompositeDomainScanner\",\"providerTypeId\":\"CompositeDomainDiscovery\",\"providerTypeName\":\"Composite Domain Discovery\"},\"enabled\":false,\"configOptions\":[{\"optionId\":\"SelectCompositeDataDomains\",\"optionValues\":[\"AllCompositeDataDomains\"]}]},{\"scanner\":{\"scannerId\":\"ProfileScanner\",\"providerTypeId\":\"Profiling\",\"providerTypeName\":\"Data Discovery\"},\"enabled\":false,\"configOptions\":[{\"optionId\":\"ProfilingRunOptions\",\"optionValues\":[\"ColumnProfiling\"]},{\"optionId\":\"SamplingOptions\",\"optionValues\":[\"NoSampling\"]},{\"optionId\":\"runOnHadoop\",\"optionValues\":[\"Native\"]},{\"optionId\":\"SimilarityProfilingRunOptions\",\"optionValues\":[]},{\"optionId\":\"securityDomain\",\"optionValues\":[\"Native\"]},{\"optionId\":\"Priority\",\"optionValues\":[\"low\"]},{\"optionId\":\"ExcludeViews\",\"optionValues\":[false]},{\"optionId\":\"Incremental\",\"optionValues\":[false]},{\"optionId\":\"SelectDataDomains\",\"optionValues\":[]},{\"optionId\":\"DataDomainConformanceOption\",\"optionValues\":[\"DataDomain\"]},{\"optionId\":\"SamplingOptions1\",\"optionValues\":[]},{\"optionId\":\"SimilarityDISConnectionOption\",\"optionValues\":[\"SameAsProfileConfiguration\"]}]}]}' http://$8:8085/access/1/catalog/resources \n",
 											"\n",
 											"curl -u Administrator:Administrator -H \"Content-Type: application/json\" -X POST -d '{\"resourceIdentifier\":{\"resourceName\":\"'$2'\",\"description\":\" \",\"resourceTypeId\":\"REDSHIFT\",\"resourceTypeName\":\"Amazon Redshift\",\"resourceTypeVersion\":\"\"},\"scannerConfigurations\":[{\"scanner\":{\"scannerId\":\"RedShiftScanner\",\"providerTypeId\":\"CORE\",\"providerTypeName\":\"Source Metadata\"},\"enabled\":true,\"configOptions\":[{\"optionId\":\"Host\",\"optionValues\":[\"'$3'\"]},{\"optionId\":\"Port\",\"optionValues\":['$4']},{\"optionId\":\"Database\",\"optionValues\":[\"'$5'\"]},{\"optionId\":\"User\",\"optionValues\":[\"'$6'\"]},{\"optionId\":\"Import system objects\",\"optionValues\":[false]},{\"optionId\":\"S3BucketName\",\"optionValues\":[\"'$1'\"]},{\"optionId\":\"Memory\",\"optionValues\":[\"Medium\"]},{\"optionId\":\"Password\",\"optionValues\":[\"'$7'\"]}]},{\"scanner\":{\"scannerId\":\"CompositeDomainScanner\",\"providerTypeId\":\"CompositeDomainDiscovery\",\"providerTypeName\":\"Composite Domain Discovery\"},\"enabled\":true,\"configOptions\":[{\"optionId\":\"SelectCompositeDataDomains\",\"optionValues\":[\"AllCompositeDataDomains\"]}]},{\"scanner\":{\"scannerId\":\"ProfileScanner\",\"providerTypeId\":\"Profiling\",\"providerTypeName\":\"Data Discovery\"},\"enabled\":false,\"configOptions\":[{\"optionId\":\"ProfilingRunOptions\",\"optionValues\":[]},{\"optionId\":\"SamplingOptions\",\"optionValues\":[]},{\"optionId\":\"SelectDataDomains\",\"optionValues\":[]},{\"optionId\":\"DataDomainConformanceOption\",\"optionValues\":[\"DataDomain\"]},{\"optionId\":\"runOnHadoop\",\"optionValues\":[\"Native\"]},{\"optionId\":\"SimilarityProfilingRunOptions\",\"optionValues\":[]},{\"optionId\":\"SamplingOptions1\",\"optionValues\":[]},{\"optionId\":\"SimilarityDISConnectionOption\",\"optionValues\":[\"SameAsProfileConfiguration\"]},{\"optionId\":\"securityDomain\",\"optionValues\":[\"Native\"]},{\"optionId\":\"Priority\",\"optionValues\":[\"low\"]},{\"optionId\":\"ExcludeViews\",\"optionValues\":[false]},{\"optionId\":\"Incremental\",\"optionValues\":[false]}]}]}' http://$8:8085/access/1/catalog/resources \n"
-                                        ]
-                                    ]
+										]]
+
 								},
+
 								"mode": "000770",
 								"owner": "ec2-user",
 								"group": "ec2-user"
+
 							},
 							"/home/ec2-user/Mercury_Setup/replaceHostname.sh": {
 								"content": {
@@ -2834,23 +2426,23 @@
 											"privateIp=$(curl http://169.254.169.254/latest/meta-data/local-ipv4) \n",
 											"Adminpublicip=$(curl http://169.254.169.254/latest/meta-data/public-hostname) \n",
 											"sudo su -c \"sed -i '$ a $privateIp $Adminpublicip  infadomain.infa.com  infadomain' /etc/hosts \" \n",
-                                            "oracleaddress=",
-                                            {
+											"oracleaddress=", {
+
 												"Fn::GetAtt": [
 													"InfaDB",
 													"Endpoint.Address"
 												]
+
 											},
 											"\n",
 											"oracleip=$(ping -c 1 $oracleaddress | grep 'bytes' | cut -d '(' -f2 | cut -d ')' -f1) \n",
 											"sudo su -c \"sed -i '$ a $oracleip $oracleaddress domaindb' /etc/hosts \" \n",
-                                            "cluster_id=",
-                                            {
+											"cluster_id=", {
 												"Ref": "EMRCluster"
+
 											},
 											"\n",
-                                            "region=",
-                                            {
+											"region=", {
 												"Ref": "AWS::Region"
 											},
 											"\n",
@@ -2868,33 +2460,27 @@
 											"master_short=`echo ${list[count-1]} | grep . | cut -d \".\" -f1 | sed 's/[ ,\"]//g'` \n",
 											"sudo su -c \"sed -i '$ a  $i ${list[count-1]} $master_short' /etc/hosts \" \n ",
 											"done \n",
-                                            "etcHostsConfigOfCluster=\"",
-                                            {
+											"etcHostsConfigOfCluster=\"", {
 												"Fn::If": [
-                                                    "SingleNodeCnd",
-                                                    {
+													"SingleNodeCnd", {
 														"Fn::Join": [
 															" ",
-                                                            [
-                                                                {
+															[{
 																	"Fn::GetAtt": [
 																		"HadoopGateway",
 																		"PrivateIp"
 																	]
-                                                                },
-                                                                {
+																}, {
 																	"Fn::GetAtt": [
 																		"HadoopGateway",
 																		"PublicDnsName"
 																	]
-                                                                },
-                                                                {
+																}, {
 																	"Fn::GetAtt": [
 																		"HadoopGateway",
 																		"PublicDnsName"
 																	]
-                                                                },
-                                                                {
+																}, {
 																	"Fn::GetAtt": [
 																		"HadoopGateway",
 																		"PrivateDnsName"
@@ -2902,37 +2488,30 @@
 																}
 															]
 														]
-                                                    },
-                                                    {
+													}, {
 														"Fn::If": [
-                                                            "CreateLargeClusterCnd",
-                                                            {
+															"CreateLargeClusterCnd", {
 																"Fn::Join": [
 																	"\\\\\\n",
-                                                                    [
-                                                                        {
+																	[{
 																			"Fn::Join": [
 																				" ",
-                                                                                [
-                                                                                    {
+																				[{
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopGateway",
 																							"PrivateIp"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopGateway",
 																							"PublicDnsName"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopGateway",
 																							"PublicDnsName"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopGateway",
 																							"PrivateDnsName"
@@ -2940,30 +2519,25 @@
 																					}
 																				]
 																			]
-                                                                        },
-                                                                        {
+																		}, {
 																			"Fn::Join": [
 																				" ",
-                                                                                [
-                                                                                    {
+																				[{
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode2",
 																							"PrivateIp"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode2",
 																							"PublicDnsName"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode2",
 																							"PublicDnsName"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode2",
 																							"PrivateDnsName"
@@ -2971,30 +2545,25 @@
 																					}
 																				]
 																			]
-                                                                        },
-                                                                        {
+																		}, {
 																			"Fn::Join": [
 																				" ",
-                                                                                [
-                                                                                    {
+																				[{
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode3",
 																							"PrivateIp"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode3",
 																							"PublicDnsName"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode3",
 																							"PublicDnsName"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode3",
 																							"PrivateDnsName"
@@ -3002,30 +2571,25 @@
 																					}
 																				]
 																			]
-                                                                        },
-                                                                        {
+																		}, {
 																			"Fn::Join": [
 																				" ",
-                                                                                [
-                                                                                    {
+																				[{
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode4",
 																							"PrivateIp"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode4",
 																							"PublicDnsName"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode4",
 																							"PublicDnsName"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode4",
 																							"PrivateDnsName"
@@ -3033,30 +2597,25 @@
 																					}
 																				]
 																			]
-                                                                        },
-                                                                        {
+																		}, {
 																			"Fn::Join": [
 																				" ",
-                                                                                [
-                                                                                    {
+																				[{
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode5",
 																							"PrivateIp"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode5",
 																							"PublicDnsName"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode5",
 																							"PublicDnsName"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode5",
 																							"PrivateDnsName"
@@ -3064,30 +2623,25 @@
 																					}
 																				]
 																			]
-                                                                        },
-                                                                        {
+																		}, {
 																			"Fn::Join": [
 																				" ",
-                                                                                [
-                                                                                    {
+																				[{
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode6",
 																							"PrivateIp"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode6",
 																							"PublicDnsName"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode6",
 																							"PublicDnsName"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode6",
 																							"PrivateDnsName"
@@ -3098,34 +2652,28 @@
 																		}
 																	]
 																]
-                                                            },
-                                                            {
+															}, {
 																"Fn::Join": [
 																	"\\\\\\n",
-                                                                    [
-                                                                        {
+																	[{
 																			"Fn::Join": [
 																				" ",
-                                                                                [
-                                                                                    {
+																				[{
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopGateway",
 																							"PrivateIp"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopGateway",
 																							"PublicDnsName"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopGateway",
 																							"PublicDnsName"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopGateway",
 																							"PrivateDnsName"
@@ -3133,30 +2681,25 @@
 																					}
 																				]
 																			]
-                                                                        },
-                                                                        {
+																		}, {
 																			"Fn::Join": [
 																				" ",
-                                                                                [
-                                                                                    {
+																				[{
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode2",
 																							"PrivateIp"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode2",
 																							"PublicDnsName"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode2",
 																							"PublicDnsName"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode2",
 																							"PrivateDnsName"
@@ -3164,30 +2707,25 @@
 																					}
 																				]
 																			]
-                                                                        },
-                                                                        {
+																		}, {
 																			"Fn::Join": [
 																				" ",
-                                                                                [
-                                                                                    {
+																				[{
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode3",
 																							"PrivateIp"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode3",
 																							"PublicDnsName"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode3",
 																							"PublicDnsName"
 																						]
-                                                                                    },
-                                                                                    {
+																					}, {
 																						"Fn::GetAtt": [
 																							"MultiNodeHadoopNode3",
 																							"PrivateDnsName"
@@ -3204,27 +2742,25 @@
 												]
 											},
 											"\"\n",
-                                            "publicdns=",
-                                            {
+											"publicdns=", {
+
 												"Fn::GetAtt": [
 													"EMRCluster",
 													"MasterPublicDNS"
 												]
+
 											},
 											"\n",
 											"privatedns=`aws ec2 describe-instances  --filters Name=dns-name,Values=$publicdns --query 'Reservations[*].Instances[*].{ID:PrivateDnsName}' --region $region | grep ID | cut -d \":\" -f2 | sed 's/[ ,\"]//g'` \n",
 											"\n",
 											"",
-                                            "sudo su -c \"echo -e $etcHostsConfigOfCluster >> /etc/hosts \"  \n",
-                                            {
+											"sudo su -c \"echo -e $etcHostsConfigOfCluster >> /etc/hosts \"  \n", {
 												"Fn::If": [
-                                                    "SingleNodeCnd",
-                                                    {
+													"SingleNodeCnd", {
 														"Fn::Join": [
 															"",
 															[
-                                                                "sudo ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ",
-                                                                {
+																"sudo ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ", {
 																	"Fn::GetAtt": [
 																		"HadoopGateway",
 																		"PublicDnsName"
@@ -3233,56 +2769,48 @@
 																" \"sudo su -c 'echo -e $etcHostsConfigOfCluster >> /etc/hosts'\" \n"
 															]
 														]
-                                                    },
-                                                    {
+													}, {
 														"Fn::If": [
-                                                            "CreateLargeClusterCnd",
-                                                            {
+															"CreateLargeClusterCnd", {
 																"Fn::Join": [
 																	"",
 																	[
-                                                                        "sudo ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ",
-                                                                        {
+																		"sudo ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ", {
 																			"Fn::GetAtt": [
 																				"MultiNodeHadoopGateway",
 																				"PublicDnsName"
 																			]
 																		},
 																		" \"sudo su -c 'echo -e $etcHostsConfigOfCluster >> /etc/hosts'\" \n",
-                                                                        "sudo ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ",
-                                                                        {
+																		"sudo ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ", {
 																			"Fn::GetAtt": [
 																				"MultiNodeHadoopNode2",
 																				"PublicDnsName"
 																			]
 																		},
 																		" \"sudo su -c  'echo -e $etcHostsConfigOfCluster >> /etc/hosts'\" \n",
-                                                                        "sudo ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ",
-                                                                        {
+																		"sudo ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ", {
 																			"Fn::GetAtt": [
 																				"MultiNodeHadoopNode3",
 																				"PublicDnsName"
 																			]
 																		},
 																		" \"sudo su -c  'echo -e $etcHostsConfigOfCluster >>  /etc/hosts'\" \n",
-                                                                        "sudo ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ",
-                                                                        {
+																		"sudo ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ", {
 																			"Fn::GetAtt": [
 																				"MultiNodeHadoopNode4",
 																				"PublicDnsName"
 																			]
 																		},
 																		" \"sudo su -c  'echo -e $etcHostsConfigOfCluster >> /etc/hosts'\" \n",
-                                                                        "sudo ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ",
-                                                                        {
+																		"sudo ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ", {
 																			"Fn::GetAtt": [
 																				"MultiNodeHadoopNode5",
 																				"PublicDnsName"
 																			]
 																		},
 																		" \"sudo su -c  'echo -e $etcHostsConfigOfCluster >> /etc/hosts'\" \n",
-                                                                        "sudo ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ",
-                                                                        {
+																		"sudo ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ", {
 																			"Fn::GetAtt": [
 																				"MultiNodeHadoopNode6",
 																				"PublicDnsName"
@@ -3291,29 +2819,25 @@
 																		" \"sudo su -c  'echo -e $etcHostsConfigOfCluster >> /etc/hosts'\" \n"
 																	]
 																]
-                                                            },
-                                                            {
+															}, {
 																"Fn::Join": [
 																	"",
 																	[
-                                                                        "sudo ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ",
-                                                                        {
+																		"sudo ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ", {
 																			"Fn::GetAtt": [
 																				"MultiNodeHadoopGateway",
 																				"PublicDnsName"
 																			]
 																		},
 																		" \"sudo su -c 'echo -e $etcHostsConfigOfCluster >> /etc/hosts'\" \n",
-                                                                        "sudo ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ",
-                                                                        {
+																		"sudo ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ", {
 																			"Fn::GetAtt": [
 																				"MultiNodeHadoopNode2",
 																				"PublicDnsName"
 																			]
 																		},
 																		" \"sudo su -c  'echo -e $etcHostsConfigOfCluster >> /etc/hosts'\" \n",
-                                                                        "sudo ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ",
-                                                                        {
+																		"sudo ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no ", {
 																			"Fn::GetAtt": [
 																				"MultiNodeHadoopNode3",
 																				"PublicDnsName"
@@ -3328,6 +2852,7 @@
 												]
 											},
 											"\n",
+
 											"privateipemr=`aws ec2 describe-instances  --filters Name=dns-name,Values=$publicdns --query 'Reservations[*].Instances[*].{ID:PrivateIpAddress}' --region $region | grep ID | cut -d \":\" -f2 | sed 's/[ ,\"]//g'` \n",
 											"sed -i -e 's/ip-172-31-20-85.us-west-2.compute.internal/'$privatedns'/g' /home/ec2-user/hadoop/core-site.xml\n",
 											"sed -i -e 's/ip-172-31-20-85.us-west-2.compute.internal/'$privatedns'/g' /home/ec2-user/hadoop/yarn-site.xml\n",
@@ -3341,9 +2866,11 @@
 											"sudo yum -y install ntp \n",
 											"sudo service ntpd start \n",
 											"sudo service ntpd status \n"
+
 										]
 									]
 								},
+
 								"mode": "000770",
 								"owner": "ec2-user",
 								"group": "ec2-user"
@@ -3378,32 +2905,24 @@
 											"export SHELL=/bin/bash \n",
 											"export HOSTNAME=infadomain.infa.com \n",
 											"cd $INFA_HOME/isp/bin \n",
-                                            "LICENSE_NAME=",
-                                            {
-												"Ref": "InformaticaKeyName"
-											},
+											"LICENSE_NAME=EICLicense.key",
 											"\n",
-                                            "administratorName=",
-                                            {
+											"administratorName=", {
 												"Ref": "InformaticaAdminUsername"
 											},
 											"\n",
-                                            "administratorPassword=",
-                                            {
+											"administratorPassword=", {
 												"Ref": "InformaticaAdminPassword"
 											},
 											"\n",
-                                            "IHSHOSTNAME=",
-                                            {
+											"IHSHOSTNAME=", {
 												"Fn::If": [
-                                                    "SingleNodeCnd",
-                                                    {
+													"SingleNodeCnd", {
 														"Fn::GetAtt": [
 															"HadoopGateway",
 															"PublicDnsName"
 														]
-                                                    },
-                                                    {
+													}, {
 														"Fn::GetAtt": [
 															"MultiNodeHadoopGateway",
 															"PublicDnsName"
@@ -3412,54 +2931,44 @@
 												]
 											},
 											"\n",
-                                            "IHSNODES=",
-                                            {
+											"IHSNODES=", {
 												"Fn::If": [
-                                                    "SingleNodeCnd",
-                                                    {
+													"SingleNodeCnd", {
 														"Fn::GetAtt": [
 															"HadoopGateway",
 															"PublicDnsName"
 														]
-                                                    },
-                                                    {
+													}, {
 														"Fn::If": [
-                                                            "CreateLargeClusterCnd",
-                                                            {
+															"CreateLargeClusterCnd", {
 																"Fn::Join": [
 																	",",
-                                                                    [
-                                                                        {
+																	[{
 																			"Fn::GetAtt": [
 																				"MultiNodeHadoopGateway",
 																				"PublicDnsName"
 																			]
-                                                                        },
-                                                                        {
+																		}, {
 																			"Fn::GetAtt": [
 																				"MultiNodeHadoopNode2",
 																				"PublicDnsName"
 																			]
-                                                                        },
-                                                                        {
+																		}, {
 																			"Fn::GetAtt": [
 																				"MultiNodeHadoopNode3",
 																				"PublicDnsName"
 																			]
-                                                                        },
-                                                                        {
+																		}, {
 																			"Fn::GetAtt": [
 																				"MultiNodeHadoopNode4",
 																				"PublicDnsName"
 																			]
-                                                                        },
-                                                                        {
+																		}, {
 																			"Fn::GetAtt": [
 																				"MultiNodeHadoopNode5",
 																				"PublicDnsName"
 																			]
-                                                                        },
-                                                                        {
+																		}, {
 																			"Fn::GetAtt": [
 																				"MultiNodeHadoopNode6",
 																				"PublicDnsName"
@@ -3467,24 +2976,20 @@
 																		}
 																	]
 																]
-                                                            },
-                                                            {
+															}, {
 																"Fn::Join": [
 																	",",
-                                                                    [
-                                                                        {
+																	[{
 																			"Fn::GetAtt": [
 																				"MultiNodeHadoopGateway",
 																				"PublicDnsName"
 																			]
-                                                                        },
-                                                                        {
+																		}, {
 																			"Fn::GetAtt": [
 																				"MultiNodeHadoopNode2",
 																				"PublicDnsName"
 																			]
-                                                                        },
-                                                                        {
+																		}, {
 																			"Fn::GetAtt": [
 																				"MultiNodeHadoopNode3",
 																				"PublicDnsName"
@@ -3505,10 +3010,15 @@
 											"/sbin/service infaservice start  \n",
 											"sleep 180  \n",
 											"echo \"Creating Infa user\"  \n",
+											"if [ $administratorName == \"Administrator\" ] \n",
+											"then\n",
+											"/opt/informatica/isp/bin/infacmd.sh  resetPassword -dn Domain -un Administrator -pd Administrator -ru Administrator -rp Administrator \n",
+											"else \n",
 											"/opt/informatica/isp/bin/infacmd.sh createUser -dn Domain -un Administrator -pd Administrator -nu $administratorName -np $administratorPassword -nf $administratorName  \n",
 											"echo \"Creating roles and gropus to user\"  \n",
 											"/opt/informatica/isp/bin/infacmd.sh assignRoleTouser -dn Domain -un Administrator -pd Administrator -eu $administratorName -rn Administrator -sn Domain  \n",
 											"/opt/informatica/isp/bin/infacmd.sh addUserToGroup -dn Domain -un Administrator -pd Administrator -eu $administratorName -gn Administrator  \n",
+											"fi \n",
 											"echo \"Disabling all the services MRS, DIS and CMS\"  \n",
 											"/opt/informatica/isp/bin/infacmd.sh disableService -dn Domain -un Administrator -pd Administrator -sn MRS -mo ABORT  \n",
 											"/opt/informatica/isp/bin/infacmd.sh disableService -dn Domain -un Administrator -pd Administrator -sn DIS -mo ABORT  \n",
@@ -3530,8 +3040,7 @@
 											"/opt/informatica/isp/bin/infacmd.sh enableservice -dn Domain -un Administrator -pd Administrator -sn MRS  \n",
 											"/opt/informatica/isp/bin/infacmd.sh enableservice -dn Domain -un Administrator -pd Administrator -sn DIS  \n",
 											"/opt/informatica/isp/bin/infacmd.sh enableservice -dn Domain -un Administrator -pd Administrator -sn CMS  \n",
-                                            "sampledata=",
-                                            {
+											"sampledata=", {
 												"Ref": "ImportSampleData"
 											},
 											"\n",
@@ -3542,6 +3051,7 @@
 											"/opt/informatica/isp/bin/infacmd.sh mrs restoreContents -dn Domain -un Administrator -pd Administrator -sn MRS -if /home/ec2-user/Mercury_Setup/MRSBackup.mrep \n",
 											"sleep 30 \n",
 											"fi \n",
+
 											"echo \"Creating the IHS \"  \n",
 											"/opt/informatica/isp/bin/infacmd.sh ihs createService -dn Domain -nn node01 -un Administrator -pd Administrator -sn IHS -p 9085 -hgh $IHSHOSTNAME -hgp 8080 -hn $IHSNODES -gu root  \n",
 											"/opt/informatica/isp/bin/infacmd.sh ISP assignLicense -dn Domain -un Administrator -pd Administrator -ln ${LICENSE_NAME} -sn IHS  \n",
@@ -3552,12 +3062,11 @@
 											"echo \"Creating the LDM \"  \n",
 											"/opt/informatica/isp/bin/infacmd.sh ldm createService -dn Domain  -nn node01 -un Administrator -pd Administrator -sn LDM -mrs MRS -mrsun Administrator -mrspd Administrator -dis DIS -cms CMS -p 8085 -tls false -ise false -ihsn IHS -isc false -cssl false  \n",
 											"/opt/informatica/isp/bin/infacmd.sh assignlicense -dn Domain -un Administrator -pd Administrator -sn LDM -ln ${LICENSE_NAME}  \n",
+
 											"/opt/informatica/isp/bin/infacmd.sh ldm updateServiceOptions -dn Domain -un Administrator -pd Administrator -sn LDM -o LdmCustomOptions.ldm.repo.content.create.timeout.millis=1200000  \n",
-                                            "loadType=",
-                                            {
+											"loadType=", {
 												"Fn::FindInMap": [
-                                                    "ClusterSizeMappingLDM",
-                                                    {
+													"ClusterSizeMapping", {
 														"Ref": "ICSClusterSize"
 													},
 													"loadtype"
@@ -3571,16 +3080,16 @@
 											"/opt/informatica/isp/bin/infacmd.sh as updateServiceOptions -dn Domain -sn AS -un Administrator -pd Administrator  -o BGExport.BGPermanentAttachmentFileLocation=/tmp  \n",
 											"echo \"Creating the CCO Object for EMR and Connection for s3 and Redshift \"  \n",
 											"/opt/informatica/isp/bin/infacmd.sh cluster createConfiguration -dn Domain -un Administrator -pd Administrator -re 30 -cn CCOEMR -dt EMR -path /home/ec2-user/hadoop.zip \n",
-                                            "publicdns=",
-                                            {
+											"publicdns=", {
+
 												"Fn::GetAtt": [
 													"EMRCluster",
 													"MasterPublicDNS"
 												]
+
 											},
 											"\n",
-                                            "region=",
-                                            {
+											"region=", {
 												"Ref": "AWS::Region"
 											},
 											"\n",
@@ -3589,51 +3098,52 @@
 											"/opt/informatica/isp/bin/infacmd.sh  createConnection -dn Domain -un Administrator -pd Administrator -cn HIVE -cid HIVE -ct HIVE -o connectString=jdbc:hive2://$privatedns:10000/default enableQuotes=false metadataConnString=jdbc:hive2://$privatedns:10000/default bypassHiveJDBCServer=false pushDownMode=true relationalSourceAndTarget=true databaseName=default hiveWarehouseDirectoryOnHDFS='/user/hive/warehouse' UserName='hive' clusterConfigId=CCOEMR \n",
 											"/opt/informatica/isp/bin/infacmd.sh createConnection -dn Domain -un Administrator -pd Administrator -cn HDFS -cid HDFS -ct \"HadoopFileSystem\" -cun root -o NAMENODEURL=hdfs://$privatedns:8020/ clusterConfigId=CCOEMR \n",
 											"/opt/informatica/isp/bin/infacmd.sh createConnection -dn Domain -un Administrator -pd Administrator -ct HBASE -cn HBASE -o clusterConfigId=CCOEMR \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh isp createConnection -dn Domain -un Administrator -pd Administrator -cn RedShift -ct AMAZONREDSHIFT -o username=",
-                                            {
+
+											"/opt/informatica/isp/bin/infacmd.sh isp createConnection -dn Domain -un Administrator -pd Administrator -cn RedShift -ct AMAZONREDSHIFT -o username=", {
 												"Ref": "RedshiftUsername"
 											},
-                                            " password=",
-                                            {
+											" password=", {
 												"Ref": "RedshiftPassword"
 											},
-                                            "  CLUSTERNODETYPE=dc1.large NUMBEROFNODESINCLUSTER=1 JDBCURL=jdbc:redshift://",
-                                            {
+											"  CLUSTERNODETYPE=dc1.large NUMBEROFNODESINCLUSTER=1 JDBCURL=jdbc:redshift://", {
 												"Fn::GetAtt": [
 													"RedshiftCluster",
 													"Endpoint.Address"
 												]
+
 											},
-                                            ":",
-                                            {
+											":", {
+
 												"Fn::GetAtt": [
 													"RedshiftCluster",
 													"Endpoint.Port"
 												]
+
 											},
-                                            "/",
-                                            {
+
+											"/", {
+
 												"Ref": "RedshiftDatabaseName"
 											},
 											"\n",
-                                            "/opt/informatica/isp/bin/infacmd.sh isp createConnection -dn Domain -un Administrator -pd Administrator -cn S3 -ct AMAZONS3 -o \"regionName='",
-                                            {
+											"/opt/informatica/isp/bin/infacmd.sh isp createConnection -dn Domain -un Administrator -pd Administrator -cn S3 -ct AMAZONS3 -o \"regionName='", {
 												"Fn::FindInMap": [
-                                                    "S3ConnectionMap",
-                                                    {
+													"S3ConnectionMap", {
 														"Ref": "AWS::Region"
 													},
 													"REGION"
 												]
 											},
 											"'",
-                                            " FolderPath=",
-                                            {
+											" FolderPath=", {
 												"Ref": "S3BucketName"
+
 											},
 											"\" \n",
+
 											"echo \"Enabling the IHS , LDM and AS \"  \n",
 											"/opt/informatica/isp/bin/infacmd.sh ISP enableService -dn Domain -un Administrator -pd Administrator -sn IHS  \n",
+
 											" if [[ $sampledata == \"Yes\" ]] \n",
 											" then \n",
 											"/opt/informatica/isp/bin/infacmd.sh ldm restoreContents -dn Domain -un Administrator -pd Administrator -sn LDM -if /home/ec2-user/Mercury_Setup/CatalogBackup.zip \n",
@@ -3641,9 +3151,12 @@
 											"fi \n",
 											"/opt/informatica/isp/bin/infacmd.sh enableservice -dn Domain -un Administrator -pd Administrator -sn LDM \n",
 											"/opt/informatica/isp/bin/infacmd.sh enableService -dn Domain -un Administrator -pd Administrator -sn AS \n"
+
 										]
+
 									]
 								},
+
 								"mode": "000770",
 								"owner": "ec2-user",
 								"group": "ec2-user"
@@ -3654,68 +3167,63 @@
 										"",
 										[
 											"#!/bin/bash\n",
-                                            "LICENSE_NAME=",
-                                            {
+											"LICENSE_NAME=", {
 												"Ref": "InformaticaKeyName"
 											},
 											"\n",
-                                            "administratorName=",
-                                            {
+											"administratorName=", {
 												"Ref": "InformaticaAdminUsername"
 											},
 											"\n",
-                                            "administratorPassword=",
-                                            {
+											"administratorPassword=", {
 												"Ref": "InformaticaAdminPassword"
 											},
 											"\n",
-                                            "sh /home/ec2-user/Mercury_Setup/scanner1.sh ",
-                                            {
+											"sh /home/ec2-user/Mercury_Setup/scanner1.sh ", {
+
 												"Ref": "S3BucketName"
+
 											},
-                                            " ",
-                                            {
+											" ", {
+
 												"Ref": "RedshiftDatabaseName"
+
 											},
-                                            " ",
-                                            {
-                                                "Fn::GetAtt": [
-                                                    "RedshiftCluster",
-                                                    "Endpoint.Address"
-                                                ]
+											" ", {
+												"Fn::GetAtt": ["RedshiftCluster", "Endpoint.Address"]
 											},
-                                            " ",
-                                            {
-                                                "Fn::GetAtt": [
-                                                    "RedshiftCluster",
-                                                    "Endpoint.Port"
-                                                ]
+											" ", {
+												"Fn::GetAtt": ["RedshiftCluster", "Endpoint.Port"]
 											},
-                                            " ",
-                                            {
+											" ", {
+
 												"Ref": "RedshiftDatabaseName"
+
 											},
-                                            " ",
-                                            {
+											" ", {
+
 												"Ref": "RedshiftUsername"
+
 											},
-                                            " ",
-                                            {
+											" ", {
+
 												"Ref": "RedshiftPassword"
+
 											},
 											" ",
 											"infadomain.infa.com",
-                                            " ",
-                                            {
+
+											" ", {
 												"Fn::GetAtt": [
 													"InformaticaS3UserAccessKey",
 													"SecretAccessKey"
 												]
 											},
-                                            " ",
-                                            {
+											" ", {
 												"Ref": "InformaticaS3UserAccessKey"
+
 											}
+
 										]
 									]
 								},
@@ -3730,12 +3238,14 @@
 										[
 											"#!/bin/bash\n",
 											"rm -f /home/ec2-user/Mercury_Setup/infastartservice.sh \n",
+
 											"rm -f /home/ec2-user/Mercury_Setup/replaceHostname.sh \n",
 											"rm -f /home/ec2-user/Mercury_Setup/config_template.xml \n",
 											"rm -f /home/ec2-user/Mercury_Setup/mercury_setup.jar \n",
 											"rm -f /home/ec2-user/Mercury_Setup/scanner1.sh \n",
 											"rm -f /home/ec2-user/Mercury_Setup/mercury_setup.jar \n",
 											"rm -f /home/ec2-user/Mercury_Setup/scanner.sh \n",
+
 											"rm -f /home/ec2-user/Mercury_Setup/CatalogBackup.zip \n",
 											"rm -f /home/ec2-user/Mercury_Setup/MRSBackup.mrep \n",
 											"rm -rf /home/ec2-user/hadoop \n",
@@ -3752,12 +3262,10 @@
 									"Fn::Join": [
 										"",
 										[
-                                            "https://",
-                                            {
+											"https://", {
 												"Ref": "InformaticaKeyS3Bucket"
 											},
-                                            ".s3.amazonaws.com/",
-                                            {
+											".s3.amazonaws.com/", {
 												"Ref": "InformaticaKeyName"
 											}
 										]
@@ -3770,12 +3278,14 @@
 							}
 						}
 					},
+
 					"Configure1": {
 						"commands": {
 							"01_ReplaceHostname": {
 								"command": " /home/ec2-user/Mercury_Setup/replaceHostname.sh"
 							}
 						},
+
 						"services": {
 							"sysvinit": {
 								"infaservice": {
@@ -3785,10 +3295,7 @@
 								"cfn-hup": {
 									"enabled": "true",
 									"ensureRunning": "true",
-                                    "files": [
-                                        "/etc/cfn/cfn-hup.conf",
-                                        "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
-                                    ]
+									"files": ["/etc/cfn/cfn-hup.conf", "/etc/cfn/hooks.d/cfn-auto-reloader.conf"]
 								}
 							}
 						}
@@ -3806,16 +3313,16 @@
 							}
 						}
 					}
+
 				}
 			},
 			"Properties": {
 				"IamInstanceProfile": {
-					"Ref": "InstanceProfile"
+					"Ref": "InformaticaInstanceProfile"
 				},
 				"ImageId": {
 					"Fn::FindInMap": [
-                        "AWSAMIRegionMap",
-                        {
+						"AWSAMIRegionMap", {
 							"Ref": "AWS::Region"
 						},
 						"INFAADMINHVM"
@@ -3828,23 +3335,21 @@
 					"Ref": "KeyName"
 				},
 				"InstanceInitiatedShutdownBehavior": "stop",
-                "NetworkInterfaces": [
-                    {
+
+				"NetworkInterfaces": [{
 						"NetworkInterfaceId": {
 							"Ref": "AdministrationServerNetInterface"
 						},
 						"DeviceIndex": "0"
 					}
 				],
-                "Tags": [
-                    {
+				"Tags": [{
 						"Key": "Name",
 						"Value": {
 							"Fn::Join": [
 								"",
 								[
-                                    "InformaticaDomain-",
-                                    {
+									"InformaticaDomain-", {
 										"Ref": "AWS::StackName"
 									}
 								]
@@ -3860,35 +3365,33 @@
 								"#!/bin/bash\n",
 								"sudo yum update -y aws-cfn-bootstrap\n",
 								"sudo wget -O /home/ec2-user/Mercury_Setup/awslogs-agent-setup.py https://s3.amazonaws.com/aws-cloudwatch/downloads/latest/awslogs-agent-setup.py \n",
+
 								"sudo chmod +x /home/ec2-user/Mercury_Setup/awslogs-agent-setup.py \n",
-                                "sudo python /home/ec2-user/Mercury_Setup/awslogs-agent-setup.py -n -r ",
-                                {
+
+								"sudo python /home/ec2-user/Mercury_Setup/awslogs-agent-setup.py -n -r ", {
 									"Ref": "AWS::Region"
 								},
 								" -c https://s3.amazonaws.com/eic-cloudwatch-configuration/awsCloudwatchLogs.conf \n",
+
 								"service awslogs start \n",
 								"# Install the files and packages from the metadata\n",
 								"/opt/aws/bin/cfn-init -v ",
-                                "         --stack ",
-                                {
+								"         --stack ", {
 									"Ref": "AWS::StackName"
 								},
 								"         --resource AdministrationServer ",
 								"         --configsets InstallAndRun ",
-                                "         --region ",
-                                {
+								"         --region ", {
 									"Ref": "AWS::Region"
 								},
 								"\n",
 								"# Signal the status from cfn-init\n",
 								"/opt/aws/bin/cfn-signal -e $? ",
-                                " --stack ",
-                                {
+								" --stack ", {
 									"Ref": "AWS::StackName"
 								},
 								" --resource AdministrationServer ",
-                                " --region ",
-                                {
+								" --region ", {
 									"Ref": "AWS::Region"
 								},
 								"\n"
@@ -3897,6 +3400,7 @@
 					}
 				}
 			},
+
 			"CreationPolicy": {
 				"ResourceSignal": {
 					"Timeout": "PT3H"
@@ -3922,10 +3426,10 @@
 			"Description": "Informatica Administrator Console",
 			"Value": {
 				"Fn::Join": [
+
 					"",
 					[
-                        "http://",
-                        {
+						"http://", {
 							"Fn::GetAtt": [
 								"AdministrationServer",
 								"PublicDnsName"
@@ -3940,10 +3444,10 @@
 			"Description": "EIC Administrator URL",
 			"Value": {
 				"Fn::Join": [
+
 					"",
 					[
-                        "http://",
-                        {
+						"http://", {
 							"Fn::GetAtt": [
 								"AdministrationServer",
 								"PublicDnsName"
@@ -3959,10 +3463,10 @@
 			"Description": "Informatica EIC User Console",
 			"Value": {
 				"Fn::Join": [
+
 					"",
 					[
-                        "http://",
-                        {
+						"http://", {
 							"Fn::GetAtt": [
 								"AdministrationServer",
 								"PublicDnsName"
@@ -3978,18 +3482,21 @@
 			"Description": "Etc host file entry that are to be added to /etc/hosts file for accessing the domain using hostname of the Adminstrative Server",
 			"Value": {
 				"Fn::Join": [
+
 					" ",
-                    [
-                        {
+					[{
 							"Fn::GetAtt": [
 								"AdministrationServer",
 								"PublicIp"
 							]
+
 						},
 						"infadomain.infa.com infadomain"
 					]
 				]
+
 			}
+
 		},
 		"InformaticaHadoopClusterURL": {
 			"Description": "IHS Hadoop Gateway node",
@@ -3997,8 +3504,7 @@
 				"Fn::Join": [
 					"",
 					[
-                        "http://",
-                        {
+						"http://", {
 							"Fn::GetAtt": [
 								"HadoopGateway",
 								"PublicDnsName"
@@ -4016,8 +3522,7 @@
 				"Fn::Join": [
 					"",
 					[
-                        "http://",
-                        {
+						"http://", {
 							"Fn::GetAtt": [
 								"MultiNodeHadoopGateway",
 								"PublicDnsName"
@@ -4035,8 +3540,7 @@
 				"Fn::Join": [
 					"",
 					[
-                        "http://",
-                        {
+						"http://", {
 							"Fn::GetAtt": [
 								"EMRCluster",
 								"MasterPublicDNS"
@@ -4050,62 +3554,55 @@
 		"S3DatalakeBucketName": {
 			"Description": "S3 Bucket used for Datalake",
 			"Value": {
+
 				"Ref": "S3BucketName"
 			}
+
 		},
+
 		"InformaticaDomainDatabaseEndPoint": {
 			"Description": "Informatica Domain Database Endpoint",
 			"Value": {
 				"Fn::Join": [
 					"",
-                    [
-                        {
+					[{
 							"Fn::GetAtt": [
 								"InfaDB",
 								"Endpoint.Address"
 							]
 						},
-                        ":",
-                        {
+
+						":", {
 							"Fn::GetAtt": [
 								"InfaDB",
 								"Endpoint.Port"
 							]
 						}
+
 					]
+
 				]
+
 			}
+
 		},
 		"RedShiftClusterEndpoint": {
 			"Description": "Redshift Cluster endpoint",
 			"Value": {
-                "Fn::Join": [
-                    ":",
-                    [
-                        {
-                            "Fn::GetAtt": [
-                                "RedshiftCluster",
-                                "Endpoint.Address"
-                            ]
-                        },
-                        {
-                            "Fn::GetAtt": [
-                                "RedshiftCluster",
-                                "Endpoint.Port"
-                            ]
+				"Fn::Join": [":", [{
+							"Fn::GetAtt": ["RedshiftCluster", "Endpoint.Address"]
+						}, {
+							"Fn::GetAtt": ["RedshiftCluster", "Endpoint.Port"]
 						}
-                    ]
-                ]
+					]]
 			}
 		},
 		"RedShiftIamRole": {
 			"Description": "RedShift IAM Role ARN",
 			"Value": {
-                "Fn::GetAtt": [
-                    "InstanceRoleRedShift",
-                    "Arn"
-                ]
+				"Fn::GetAtt": ["InstanceRoleRedShift", "Arn"]
 			}
+
 		},
 		"InformaticaAdminConsoleServerLogs": {
 			"Description": "Informatica Domain Installation Log Location",
@@ -4119,6 +3616,7 @@
 			"Description": "Cloud Formation Installation Log Location",
 			"Value": "/var/log/cfn-init-cmd.log"
 		},
+
 		"InformaticaHadoopInstallLogs": {
 			"Description": "Master Node Hadoop Installation Log Location",
 			"Value": "/mnt/var/log/bootstrap-actions"
@@ -4127,5 +3625,7 @@
 			"Description": "Informatica Developer Tool Download Location",
 			"Value": "https://s3-us-west-2.amazonaws.com/bdm-awsmarketplace/1020_Client_Installer_winem-64t.zip"
 		}
+
 	}
+
 }
