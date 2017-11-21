@@ -481,151 +481,19 @@
         "ClusterSizeMapping": {
             "Small": {
                 "InstanceType": "c4.8xlarge",
-                "NumberOfInstances": "1"
-            },
-            "Medium": {
-                "InstanceType": "c4.8xlarge",
-                "NumberOfInstances": "3"
-            },
-            "Large": {
-                "InstanceType": "c4.8xlarge",
-                "NumberOfInstances": "6"
-            }
-        },
-        "ClusterSizeMappingLDM": {
-            "Small": {
+                "NumberOfInstances": "1",
                 "loadtype": "low"
             },
             "Medium": {
+                "InstanceType": "c4.8xlarge",
+                "NumberOfInstances": "3",
                 "loadtype": "medium"
             },
             "Large": {
+                "InstanceType": "c4.8xlarge",
+                "NumberOfInstances": "6",
                 "loadtype": "high"
             }
-        },
-        "MultiAZRegionMapping": {
-            "us-east-1": {
-                "Supporting": "YES"
-            },
-            "us-east-2": {
-                "Supporting": "YES"
-            },
-            "us-west-1": {
-                "Supporting": "NO"
-            },
-            "us-west-2": {
-                "Supporting": "YES"
-            },
-            "ap-south-1": {
-                "Supporting": "YES"
-            },
-            "ap-northeast-1": {
-                "Supporting": "YES"
-            },
-            "ap-northeast-2": {
-                "Supporting": "YES"
-            },
-            "ap-southeast-1": {
-                "Supporting": "NO"
-            },
-            "ap-southeast-2": {
-                "Supporting": "YES"
-            },
-            "sa-east-1": {
-                "Supporting": "YES"
-            },
-            "eu-west-1": {
-                "Supporting": "YES"
-            },
-            "eu-west-2": {
-                "Supporting": "YES"
-            },
-            "eu-central-1": {
-                "Supporting": "NO"
-            },
-            "ca-central-1": {
-                "Supporting": "YES"
-            }
-        },
-        "AWSInfoRegionMap": {
-            "ap-northeast-1": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "ap-northeast-2": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "ap-south-1": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "ap-southeast-1": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "ap-southeast-2": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "ca-central-1": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "eu-central-1": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "eu-west-1": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "eu-west-2": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "sa-east-1": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "us-east-1": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "us-east-2": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "us-west-1": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            },
-            "us-west-2": {
-                "Partition": "aws",
-                "QuickStartS3URL": "https://s3.amazonaws.com"
-            }
-        }
-    },
-    "Rules": {
-        "SubnetsInVPC": {
-            "Assertions": [
-                {
-                    "Assert": {
-                        "Fn::EachMemberIn": [
-                            {
-                                "Fn::ValueOfAll": [
-                                    "AWS::EC2::Subnet::Id",
-                                    "VpcId"
-                                ]
-                            },
-                            {
-                                "Fn::RefAll": "AWS::EC2::VPC::Id"
-                            }
-                        ]
-                    },
-                    "AssertDescription": "All subnets must in the VPC"
-                }
-            ]
         }
     },
     "Conditions": {
@@ -697,20 +565,6 @@
                         "1"
                     ]
                 }
-            ]
-        },
-        "SupportMultiAZCnd": {
-            "Fn::Equals": [
-                {
-                    "Fn::FindInMap": [
-                        "MultiAZRegionMapping",
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        "Supporting"
-                    ]
-                },
-                "YES"
             ]
         }
     },
@@ -1000,7 +854,7 @@
             "DependsOn": "Node1IPAssoc",
             "Properties": {
                 "IamInstanceProfile": {
-                    "Ref": "InstanceProfile"
+                    "Ref": "InformaticaInstanceProfile"
                 },
                 "ImageId": {
                     "Fn::FindInMap": [
@@ -1085,7 +939,7 @@
             "DependsOn": "Node1IPAssoc",
             "Properties": {
                 "IamInstanceProfile": {
-                    "Ref": "InstanceProfile"
+                    "Ref": "InformaticaInstanceProfile"
                 },
                 "ImageId": {
                     "Fn::FindInMap": [
@@ -1170,7 +1024,7 @@
             "DependsOn": "Node2IPAssoc",
             "Properties": {
                 "IamInstanceProfile": {
-                    "Ref": "InstanceProfile"
+                    "Ref": "InformaticaInstanceProfile"
                 },
                 "ImageId": {
                     "Fn::FindInMap": [
@@ -1205,15 +1059,7 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    "HadoopNode",
-                                    "2"
-                                ]
-                            ]
-                        }
+                        "Value": "HadoopNode-2"
                     }
                 ],
                 "UserData": {
@@ -1263,7 +1109,7 @@
             "DependsOn": "Node3IPAssoc",
             "Properties": {
                 "IamInstanceProfile": {
-                    "Ref": "InstanceProfile"
+                    "Ref": "InformaticaInstanceProfile"
                 },
                 "ImageId": {
                     "Fn::FindInMap": [
@@ -1298,15 +1144,7 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    "HadoopNode",
-                                    "3"
-                                ]
-                            ]
-                        }
+                        "Value": "HadoopNode-3"
                     }
                 ],
                 "UserData": {
@@ -1356,7 +1194,7 @@
             "DependsOn": "Node4IPAssoc",
             "Properties": {
                 "IamInstanceProfile": {
-                    "Ref": "InstanceProfile"
+                    "Ref": "InformaticaInstanceProfile"
                 },
                 "ImageId": {
                     "Fn::FindInMap": [
@@ -1391,15 +1229,7 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    "HadoopNode",
-                                    "4"
-                                ]
-                            ]
-                        }
+                        "Value": "HadoopNode-4"
                     }
                 ],
                 "UserData": {
@@ -1449,7 +1279,7 @@
             "DependsOn": "Node5IPAssoc",
             "Properties": {
                 "IamInstanceProfile": {
-                    "Ref": "InstanceProfile"
+                    "Ref": "InformaticaInstanceProfile"
                 },
                 "ImageId": {
                     "Fn::FindInMap": [
@@ -1484,15 +1314,7 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    "HadoopNode",
-                                    "5"
-                                ]
-                            ]
-                        }
+                        "Value": "HadoopNode-5"
                     }
                 ],
                 "UserData": {
@@ -1542,7 +1364,7 @@
             "DependsOn": "Node6IPAssoc",
             "Properties": {
                 "IamInstanceProfile": {
-                    "Ref": "InstanceProfile"
+                    "Ref": "InformaticaInstanceProfile"
                 },
                 "ImageId": {
                     "Fn::FindInMap": [
@@ -1577,15 +1399,7 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    "HadoopNode",
-                                    "6"
-                                ]
-                            ]
-                        }
+                        "Value": "HadoopNode-6"
                     }
                 ],
                 "UserData": {
@@ -1719,17 +1533,11 @@
                     "AdditionalMasterSecurityGroups": [
                         {
                             "Ref": "InfaDomainEMRSecurityGroup"
-                        },
-                        {
-                            "Ref": "RemoteAccessEMRSecurityGroup"
                         }
                     ],
                     "AdditionalSlaveSecurityGroups": [
                         {
                             "Ref": "InfaDomainEMRSecurityGroup"
-                        },
-                        {
-                            "Ref": "RemoteAccessEMRSecurityGroup"
                         }
                     ]
                 },
@@ -1737,7 +1545,7 @@
                     "Ref": "EMRClusterName"
                 },
                 "JobFlowRole": {
-                    "Ref": "InstanceProfile"
+                    "Ref": "InformaticaInstanceProfile"
                 },
                 "ReleaseLabel": "emr-5.4.0",
                 "ServiceRole": "EMR_DefaultRole",
@@ -1821,7 +1629,7 @@
                 },
                 "VpcSecurityGroupIds": [
                     {
-                        "Ref": "SecurityGroup"
+                        "Ref": "RedShiftSecurityGroup"
                     }
                 ],
                 "ClusterSubnetGroupName": {
@@ -1870,14 +1678,6 @@
                         "IpProtocol": "tcp",
                         "FromPort": "8020",
                         "ToPort": "8020",
-                        "SourceSecurityGroupId": {
-                            "Ref": "InfaDomainSecurityGroup"
-                        }
-                    },
-                    {
-                        "IpProtocol": "-1",
-                        "FromPort": "0",
-                        "ToPort": "65535",
                         "SourceSecurityGroupId": {
                             "Ref": "InfaDomainSecurityGroup"
                         }
@@ -1953,25 +1753,6 @@
                         "SourceSecurityGroupId": {
                             "Ref": "InfaDomainSecurityGroup"
                         }
-                    }
-                ]
-            }
-        },
-        "RemoteAccessEMRSecurityGroup": {
-            "Type": "AWS::EC2::SecurityGroup",
-            "Properties": {
-                "GroupDescription": "Enable Informatica Domain Access in EMR",
-                "VpcId": {
-                    "Ref": "VPCID"
-                },
-                "SecurityGroupIngress": [
-                    {
-                        "IpProtocol": "-1",
-                        "FromPort": "0",
-                        "ToPort": "65535",
-                        "CidrIp": {
-                            "Ref": "IPAddressRange"
-                        }
                     },
                     {
                         "IpProtocol": "tcp",
@@ -1992,14 +1773,6 @@
                     "Ref": "VPCID"
                 },
                 "SecurityGroupIngress": [
-                    {
-                        "IpProtocol": "-1",
-                        "FromPort": "0",
-                        "ToPort": "65535",
-                        "CidrIp": {
-                            "Ref": "IPAddressRange"
-                        }
-                    },
                     {
                         "IpProtocol": "tcp",
                         "FromPort": "6006",
@@ -2081,14 +1854,6 @@
                         }
                     },
                     {
-                        "IpProtocol": "-1",
-                        "FromPort": "0",
-                        "ToPort": "65535",
-                        "CidrIp": {
-                            "Ref": "IPAddressRange"
-                        }
-                    },
-                    {
                         "IpProtocol": "udp",
                         "FromPort": "1521",
                         "ToPort": "1521",
@@ -2112,7 +1877,7 @@
                 ]
             }
         },
-        "SecurityGroup": {
+        "RedShiftSecurityGroup": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
                 "GroupDescription": "Security group",
@@ -2130,11 +1895,39 @@
                         "IpProtocol": "tcp"
                     },
                     {
-                        "IpProtocol": "-1",
-                        "FromPort": "0",
-                        "ToPort": "65535",
+                        "IpProtocol": "tcp",
+                        "FromPort": {
+                            "Ref": "RedshiftDatabasePort"
+                        },
+                        "ToPort": {
+                            "Ref": "RedshiftDatabasePort"
+                        },
+                        "SourceSecurityGroupId": {
+                            "Ref": "InfaDomainEMRSecurityGroup"
+                        }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": {
+                            "Ref": "RedshiftDatabasePort"
+                        },
+                        "ToPort": {
+                            "Ref": "RedshiftDatabasePort"
+                        },
                         "SourceSecurityGroupId": {
                             "Ref": "InfaDomainSecurityGroup"
+                        }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": {
+                            "Ref": "RedshiftDatabasePort"
+                        },
+                        "ToPort": {
+                            "Ref": "RedshiftDatabasePort"
+                        },
+                        "SourceSecurityGroupId": {
+                            "Ref": "AdditionalICSSecurityGroup"
                         }
                     }
                 ],
@@ -2190,14 +1983,6 @@
                         }
                     },
                     {
-                        "IpProtocol": "-1",
-                        "FromPort": "0",
-                        "ToPort": "65535",
-                        "CidrIp": {
-                            "Ref": "IPAddressRange"
-                        }
-                    },
-                    {
                         "IpProtocol": "tcp",
                         "FromPort": "50070",
                         "ToPort": "50070",
@@ -2214,7 +1999,7 @@
                         }
                     },
                     {
-                        "IpProtocol": "-1",
+                        "IpProtocol": "tcp",
                         "FromPort": "0",
                         "ToPort": "65535",
                         "SourceSecurityGroupId": {
@@ -2225,7 +2010,7 @@
                         }
                     },
                     {
-                        "IpProtocol": "-1",
+                        "IpProtocol": "tcp",
                         "FromPort": "0",
                         "ToPort": "65535",
                         "SourceSecurityGroupId": {
@@ -2248,15 +2033,7 @@
             "Type": "AWS::RDS::DBInstance",
             "Properties": {
                 "AllocatedStorage": "200",
-                "MultiAZ": {
-                    "Fn::If": [
-                        "SupportMultiAZCnd",
-                        "true",
-                        {
-                            "Ref": "AWS::NoValue"
-                        }
-                    ]
-                },
+                "MultiAZ": "true",
                 "StorageType": "gp2",
                 "LicenseModel": "license-included",
                 "DBInstanceClass": "db.m4.2xlarge",
@@ -2287,166 +2064,6 @@
                 }
             }
         },
-        "InboundRule": {
-            "Type": "AWS::EC2::SecurityGroupIngress",
-            "Properties": {
-                "IpProtocol": "-1",
-                "FromPort": "0",
-                "ToPort": "65535",
-                "SourceSecurityGroupId": {
-                    "Fn::GetAtt": [
-                        "InfaDomainSecurityGroup",
-                        "GroupId"
-                    ]
-                },
-                "GroupId": {
-                    "Fn::GetAtt": [
-                        "InfaDomainSecurityGroup",
-                        "GroupId"
-                    ]
-                }
-            }
-        },
-        "InboundRuleDB": {
-            "Type": "AWS::EC2::SecurityGroupIngress",
-            "Properties": {
-                "IpProtocol": "-1",
-                "FromPort": "0",
-                "ToPort": "65535",
-                "SourceSecurityGroupId": {
-                    "Fn::GetAtt": [
-                        "InfaDBSecurityGroup",
-                        "GroupId"
-                    ]
-                },
-                "GroupId": {
-                    "Fn::GetAtt": [
-                        "InfaDBSecurityGroup",
-                        "GroupId"
-                    ]
-                }
-            }
-        },
-        "InboundRuleEMR": {
-            "Type": "AWS::EC2::SecurityGroupIngress",
-            "Properties": {
-                "IpProtocol": "-1",
-                "FromPort": "0",
-                "ToPort": "65535",
-                "SourceSecurityGroupId": {
-                    "Fn::GetAtt": [
-                        "InfaDomainEMRSecurityGroup",
-                        "GroupId"
-                    ]
-                },
-                "GroupId": {
-                    "Fn::GetAtt": [
-                        "InfaDomainEMRSecurityGroup",
-                        "GroupId"
-                    ]
-                }
-            }
-        },
-        "InboundRuleICS": {
-            "Type": "AWS::EC2::SecurityGroupIngress",
-            "Properties": {
-                "IpProtocol": "-1",
-                "FromPort": "0",
-                "ToPort": "65535",
-                "SourceSecurityGroupId": {
-                    "Fn::GetAtt": [
-                        "AdditionalICSSecurityGroup",
-                        "GroupId"
-                    ]
-                },
-                "GroupId": {
-                    "Fn::GetAtt": [
-                        "AdditionalICSSecurityGroup",
-                        "GroupId"
-                    ]
-                }
-            }
-        },
-        "InboundRuleICSDomain": {
-            "Type": "AWS::EC2::SecurityGroupIngress",
-            "Properties": {
-                "IpProtocol": "-1",
-                "FromPort": "0",
-                "ToPort": "65535",
-                "SourceSecurityGroupId": {
-                    "Fn::GetAtt": [
-                        "AdditionalICSSecurityGroup",
-                        "GroupId"
-                    ]
-                },
-                "GroupId": {
-                    "Fn::GetAtt": [
-                        "InfaDomainSecurityGroup",
-                        "GroupId"
-                    ]
-                }
-            }
-        },
-        "InboundRuleRedShift": {
-            "Type": "AWS::EC2::SecurityGroupIngress",
-            "Properties": {
-                "IpProtocol": "-1",
-                "FromPort": "0",
-                "ToPort": "65535",
-                "SourceSecurityGroupId": {
-                    "Fn::GetAtt": [
-                        "SecurityGroup",
-                        "GroupId"
-                    ]
-                },
-                "GroupId": {
-                    "Fn::GetAtt": [
-                        "SecurityGroup",
-                        "GroupId"
-                    ]
-                }
-            }
-        },
-        "InboundRuleEMRAll": {
-            "Type": "AWS::EC2::SecurityGroupIngress",
-            "Properties": {
-                "IpProtocol": "-1",
-                "FromPort": "0",
-                "ToPort": "65535",
-                "SourceSecurityGroupId": {
-                    "Fn::GetAtt": [
-                        "InfaDomainEMRSecurityGroup",
-                        "GroupId"
-                    ]
-                },
-                "GroupId": {
-                    "Fn::GetAtt": [
-                        "InfaDomainSecurityGroup",
-                        "GroupId"
-                    ]
-                }
-            }
-        },
-        "InboundRuleIHSDomainAll": {
-            "Type": "AWS::EC2::SecurityGroupIngress",
-            "Properties": {
-                "IpProtocol": "-1",
-                "FromPort": "0",
-                "ToPort": "65535",
-                "SourceSecurityGroupId": {
-                    "Fn::GetAtt": [
-                        "InfaDomainSecurityGroup",
-                        "GroupId"
-                    ]
-                },
-                "GroupId": {
-                    "Fn::GetAtt": [
-                        "AdditionalICSSecurityGroup",
-                        "GroupId"
-                    ]
-                }
-            }
-        },
         "InfaDBSubnetGroup": {
             "Type": "AWS::RDS::DBSubnetGroup",
             "Properties": {
@@ -2465,14 +2082,27 @@
                 },
                 "SecurityGroupIngress": [
                     {
-                        "IpProtocol": "-1",
-                        "FromPort": "0",
-                        "ToPort": "65535",
+                        "IpProtocol": "tcp",
+                        "FromPort": "1521",
+                        "ToPort": "1521",
                         "SourceSecurityGroupId": {
-                            "Fn::GetAtt": [
-                                "InfaDomainSecurityGroup",
-                                "GroupId"
-                            ]
+                            "Ref": "InfaDomainSecurityGroup"
+                        }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "1521",
+                        "ToPort": "1521",
+                        "SourceSecurityGroupId": {
+                            "Ref": "InfaDomainEMRSecurityGroup"
+                        }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "1521",
+                        "ToPort": "1521",
+                        "SourceSecurityGroupId": {
+                            "Ref": "AdditionalICSSecurityGroup"
                         }
                     }
                 ]
@@ -2503,7 +2133,7 @@
                 "Path": "/"
             }
         },
-        "InstanceRole": {
+        "InformaticaInstanceRole": {
             "Type": "AWS::IAM::Role",
             "Properties": {
                 "AssumeRolePolicyDocument": {
@@ -2522,7 +2152,7 @@
                     ]
                 },
                 "ManagedPolicyArns": [
-                    "arn:aws:iam::aws:policy/AdministratorAccess",
+                    "arn:aws:iam::aws:policy/IAMFullAccess",
                     "arn:aws:iam::aws:policy/AmazonS3FullAccess",
                     "arn:aws:iam::aws:policy/AmazonRedshiftFullAccess",
                     "arn:aws:iam::aws:policy/AmazonEC2FullAccess",
@@ -2546,27 +2176,8 @@
                                     ],
                                     "Resource": [
                                         {
-                                            "Fn::Join": [
-                                                "",
-                                                [
-                                                    "arn:aws:s3:::",
-                                                    {
-                                                        "Ref": "S3BucketName"
-                                                    }
-                                                ]
-                                            ]
-                                        },
-                                        {
-                                            "Fn::Join": [
-                                                "",
-                                                [
-                                                    "arn:aws:s3:::",
-                                                    {
-                                                        "Ref": "S3BucketName"
-                                                    },
-                                                    "/*"
-                                                ]
-                                            ]
+                                            "Fn::Sub": "arn:aws:s3:::${S3BucketName}",
+                                            "Fn::Sub": "arn:aws:s3:::${S3BucketName}/*"
                                         }
                                     ],
                                     "Effect": "Allow"
@@ -2607,35 +2218,12 @@
                             "Action": [
                                 "s3:Get*",
                                 "s3:GetObject",
-                                "s3:List*",
-                                "s3:*"
+                                "s3:List*"
                             ],
                             "Effect": "Allow",
                             "Resource": [
                                 {
-                                    "Fn::Join": [
-                                        "",
-                                        [
-                                            "arn:",
-                                            {
-                                                "Fn::FindInMap": [
-                                                    "AWSInfoRegionMap",
-                                                    {
-                                                        "Ref": "AWS::Region"
-                                                    },
-                                                    "Partition"
-                                                ]
-                                            },
-                                            ":s3:::",
-                                            {
-                                                "Ref": "InformaticaKeyS3Bucket"
-                                            },
-                                            "/",
-                                            {
-                                                "Ref": "InformaticaKeyName"
-                                            }
-                                        ]
-                                    ]
+                                    "Fn::Sub": "arn:aws:s3:::${InformaticaKeyS3Bucket}/${InformaticaKeyName}"
                                 }
                             ]
                         },
@@ -2648,25 +2236,7 @@
                             "Effect": "Allow",
                             "Resource": [
                                 {
-                                    "Fn::Join": [
-                                        "",
-                                        [
-                                            "arn:",
-                                            {
-                                                "Fn::FindInMap": [
-                                                    "AWSInfoRegionMap",
-                                                    {
-                                                        "Ref": "AWS::Region"
-                                                    },
-                                                    "Partition"
-                                                ]
-                                            },
-                                            ":s3:::",
-                                            {
-                                                "Ref": "S3BucketName"
-                                            }
-                                        ]
-                                    ]
+                                    "Fn::Sub": "arn:aws:s3:::${S3BucketName}"
                                 }
                             ]
                         }
@@ -2674,18 +2244,18 @@
                 },
                 "Roles": [
                     {
-                        "Ref": "InstanceRole"
+                        "Ref": "InformaticaInstanceRole"
                     }
                 ]
             }
         },
-        "InstanceProfile": {
+        "InformaticaInstanceProfile": {
             "Type": "AWS::IAM::InstanceProfile",
             "Properties": {
                 "Path": "/",
                 "Roles": [
                     {
-                        "Ref": "InstanceRole"
+                        "Ref": "InformaticaInstanceRole"
                     }
                 ]
             }
@@ -2738,7 +2308,7 @@
                     "S3AccessCreds": {
                         "type": "S3",
                         "roleName": {
-                            "Ref": "InstanceRole"
+                            "Ref": "InformaticaInstanceRole"
                         },
                         "buckets": [
                             {
@@ -3378,10 +2948,7 @@
                                             "export SHELL=/bin/bash \n",
                                             "export HOSTNAME=infadomain.infa.com \n",
                                             "cd $INFA_HOME/isp/bin \n",
-                                            "LICENSE_NAME=",
-                                            {
-                                                "Ref": "InformaticaKeyName"
-                                            },
+                                            "LICENSE_NAME=EICLicense.key",
                                             "\n",
                                             "administratorName=",
                                             {
@@ -3505,10 +3072,15 @@
                                             "/sbin/service infaservice start  \n",
                                             "sleep 180  \n",
                                             "echo \"Creating Infa user\"  \n",
+                                            "if [ $administratorName == \"Administrator\" ] \n",
+                                            "then\n",
+                                            "/opt/informatica/isp/bin/infacmd.sh  resetPassword -dn Domain -un Administrator -pd Administrator -ru Administrator -rp Administrator \n",
+                                            "else \n",
                                             "/opt/informatica/isp/bin/infacmd.sh createUser -dn Domain -un Administrator -pd Administrator -nu $administratorName -np $administratorPassword -nf $administratorName  \n",
                                             "echo \"Creating roles and gropus to user\"  \n",
                                             "/opt/informatica/isp/bin/infacmd.sh assignRoleTouser -dn Domain -un Administrator -pd Administrator -eu $administratorName -rn Administrator -sn Domain  \n",
                                             "/opt/informatica/isp/bin/infacmd.sh addUserToGroup -dn Domain -un Administrator -pd Administrator -eu $administratorName -gn Administrator  \n",
+                                            "fi \n",
                                             "echo \"Disabling all the services MRS, DIS and CMS\"  \n",
                                             "/opt/informatica/isp/bin/infacmd.sh disableService -dn Domain -un Administrator -pd Administrator -sn MRS -mo ABORT  \n",
                                             "/opt/informatica/isp/bin/infacmd.sh disableService -dn Domain -un Administrator -pd Administrator -sn DIS -mo ABORT  \n",
@@ -3556,7 +3128,7 @@
                                             "loadType=",
                                             {
                                                 "Fn::FindInMap": [
-                                                    "ClusterSizeMappingLDM",
+                                                    "ClusterSizeMapping",
                                                     {
                                                         "Ref": "ICSClusterSize"
                                                     },
@@ -3810,7 +3382,7 @@
             },
             "Properties": {
                 "IamInstanceProfile": {
-                    "Ref": "InstanceProfile"
+                    "Ref": "InformaticaInstanceProfile"
                 },
                 "ImageId": {
                     "Fn::FindInMap": [
