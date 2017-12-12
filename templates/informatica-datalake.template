@@ -423,34 +423,34 @@
 
 		"S3ConnectionMap": {
 			"ap-northeast-1": {
-				"REGION": "Asia Pacific (Tokyo)"
+				"REGION": "Asia Pacific(Tokyo)"
 			},
 			"ap-northeast-2": {
-				"REGION": "Asia Pacific (Seoul)"
+				"REGION": "Asia Pacific(Seoul)"
 			},
 			"ap-south-1": {
-				"REGION": "Asia Pacific (Mumbai)"
+				"REGION": "Asia Pacific(Mumbai)"
 			},
 			"ap-southeast-1": {
-				"REGION": "Asia Pacific (Singapore)"
+				"REGION": "Asia Pacific(Singapore)"
 			},
 			"ap-southeast-2": {
-				"REGION": "Asia Pacific (Sydney)"
+				"REGION": "Asia Pacific(Sydney)"
 			},
 			"ca-central-1": {
-				"REGION": "Canada (Central)"
+				"REGION": "Canada(Central)"
 			},
 			"eu-central-1": {
-				"REGION": "EU (Frankfurt)"
+				"REGION": "EU(Frankfurt)"
 			},
 			"eu-west-1": {
-				"REGION": "EU (Ireland)"
+				"REGION": "EU(Ireland)"
 			},
 			"eu-west-2": {
-				"REGION": "EU (London)"
+				"REGION": "EU(London)"
 			},
 			"sa-east-1": {
-				"REGION": "South America (Sao Paulo)"
+				"REGION": "South America(Sao Paulo)"
 			},
 			"us-east-1": {
 				"REGION": "US East(N. Virginia)"
@@ -3303,7 +3303,8 @@
 					"Configure2": {
 						"commands": {
 							"02_MercurySetup": {
-								"command": " /home/ec2-user/Mercury_Setup/infastartservice.sh"
+								"command": " /home/ec2-user/Mercury_Setup/infastartservice.sh",
+								"ignoreErrors":"true"
 							},
 							"03_LDMScanner": {
 								"command": " /home/ec2-user/Mercury_Setup/scanner_creation.sh"
@@ -3403,7 +3404,7 @@
 
 			"CreationPolicy": {
 				"ResourceSignal": {
-					"Timeout": "PT3H"
+					"Timeout": "PT5H"
 				}
 			},
 			"DependsOn": [
