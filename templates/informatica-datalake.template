@@ -145,11 +145,11 @@
 			"Type": "String"
 		},
 		"QSS3KeyPrefix": {
-			"AllowedPattern": "^[0-9a-zA-Z-]+(/[0-9a-zA-Z-]+)*$",
-			"ConstraintDescription": "Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/). It cannot start or end with forward slash (/) because they are automatically appended.",
-			"Default": "informatica/datalake/latest",
-			"Description": "Do not change: S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/). It cannot start or end with forward slash (/) because they are automatically appended.",
-			"Type": "String"
+			"AllowedPattern": "^[0-9a-zA-Z-][0-9a-zA-Z-/]*/$",
+            "Default": "informatica/datalake/latest/",
+            "ConstraintDescription": "Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/).",
+            "Description": "S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/).",
+            "Type": "String"
 		},
 		"RedshiftDatabaseName": {
 			"Description": "The name of the first database to be created when the cluster is created",
