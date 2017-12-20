@@ -6,11 +6,16 @@
             "ParameterGroups": [
                 {
                     "Label": {
-                        "default": "AWS Quick Start Configuration"
+                        "default": "Network Configuration"
                     },
                     "Parameters": [
-                        "QSS3BucketName",
-                        "QSS3KeyPrefix"
+                        "AvailabilityZones",
+                        "PrivateSubnet1CIDR",
+                        "PrivateSubnet2CIDR",
+                        "PublicSubnet1CIDR",
+                        "PublicSubnet2CIDR",
+                        "RemoteAccessCIDR",
+                        "VPCCIDR"
                     ]
                 },
                 {
@@ -72,16 +77,11 @@
                 },
                 {
                     "Label": {
-                        "default": "Network Configuration"
+                        "default": "AWS Quick Start Configuration"
                     },
                     "Parameters": [
-                        "AvailabilityZones",
-                        "PrivateSubnet1CIDR",
-                        "PrivateSubnet2CIDR",
-                        "PublicSubnet1CIDR",
-                        "PublicSubnet2CIDR",
-                        "RemoteAccessCIDR",
-                        "VPCCIDR"
+                        "QSS3BucketName",
+                        "QSS3KeyPrefix"
                     ]
                 }
             ],
@@ -324,8 +324,8 @@
         },
         "QSS3KeyPrefix": {
             "AllowedPattern": "^[0-9a-zA-Z-][0-9a-zA-Z-/]*/$",
-            "Default": "datalake/informatica/latest/",
             "ConstraintDescription": "Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/).",
+            "Default": "datalake/informatica/latest/",
             "Description": "S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/).",
             "Type": "String"
         },
