@@ -10,12 +10,12 @@
                     },
                     "Parameters": [
                         "AvailabilityZones",
+                        "VPCCIDR",
                         "PrivateSubnet1CIDR",
                         "PrivateSubnet2CIDR",
                         "PublicSubnet1CIDR",
                         "PublicSubnet2CIDR",
-                        "RemoteAccessCIDR",
-                        "VPCCIDR"
+                        "RemoteAccessCIDR"
                     ]
                 },
                 {
@@ -362,7 +362,7 @@
         },
         "RedshiftNumberOfNodes": {
             "Default": "1",
-            "Description": "The number of compute nodes in the cluster. For multi-node clusters, the NumberOfNodes parameter must be greater than 1",
+            "Description": "The number of compute nodes in the cluster. For multi-node clusters, this parameter must be greater than 1",
             "Type": "Number"
         },
         "RedshiftPassword": {
