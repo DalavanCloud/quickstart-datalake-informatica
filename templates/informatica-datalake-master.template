@@ -1,6 +1,6 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Informatica Data Lake Solution for AWS S3 Data Lake. This template creates Amazon EMR, S3, Redshift, EC2 instances, Elastic IPs and related resources and installs Informatica EIC and BDM. You will be billed for the AWS resources used if you create a stack from this template. QS(5024)",
+    "Description": "Informatica Data Lake Solution for AWS S3 Data Lake. This template creates Amazon EMR, S3, Redshift, EC2 instances, Elastic IPs and related resources and installs Informatica EIC and BDM. You will be billed for the AWS resources used if you create a stack from this template. (qs-1o45mujk8)",
     "Metadata": {
         "AWS::CloudFormation::Interface": {
             "ParameterGroups": [
