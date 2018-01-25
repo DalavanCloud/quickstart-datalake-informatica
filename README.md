@@ -7,7 +7,7 @@ The Quick Start configures the AWS infrastructure, deploys the Informatica Data 
 
 The Quick Start offers two deployment options:
 
-- Deploying the data lake into a new virtual private cloud (VPC) on AWS
+- Deploying the data lake into a new VPC on AWS
 - Deploying the data lake into an existing VPC on AWS
 
 You can also use the AWS CloudFormation templates as a starting point for your own implementation.
