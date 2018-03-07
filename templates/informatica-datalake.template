@@ -1978,7 +1978,7 @@
                         ]
                     }
                 ],
-                "PubliclyAccessible": "true",
+                "PubliclyAccessible": "false",
                 "Port": {
                     "Ref": "RedshiftDatabasePort"
                 },
@@ -3294,111 +3294,6 @@
                                                 "Ref": "InformaticaAdminPassword"
                                             },
                                             "\n",
-                                            "IHSHOSTNAME=",
-                                            {
-                                                "Fn::If": [
-                                                    "SingleNodeCnd",
-                                                    {
-                                                        "Fn::GetAtt": [
-                                                            "HadoopGateway",
-                                                            "PublicDnsName"
-                                                        ]
-                                                    },
-                                                    {
-                                                        "Fn::GetAtt": [
-                                                            "MultiNodeHadoopGateway",
-                                                            "PublicDnsName"
-                                                        ]
-                                                    }
-                                                ]
-                                            },
-                                            "\n",
-                                            "IHSNODES=",
-                                            {
-                                                "Fn::If": [
-                                                    "SingleNodeCnd",
-                                                    {
-                                                        "Fn::GetAtt": [
-                                                            "HadoopGateway",
-                                                            "PublicDnsName"
-                                                        ]
-                                                    },
-                                                    {
-                                                        "Fn::If": [
-                                                            "CreateLargeClusterCnd",
-                                                            {
-                                                                "Fn::Join": [
-                                                                    ",",
-                                                                    [
-                                                                        {
-                                                                            "Fn::GetAtt": [
-                                                                                "MultiNodeHadoopGateway",
-                                                                                "PublicDnsName"
-                                                                            ]
-                                                                        },
-                                                                        {
-                                                                            "Fn::GetAtt": [
-                                                                                "MultiNodeHadoopNode2",
-                                                                                "PublicDnsName"
-                                                                            ]
-                                                                        },
-                                                                        {
-                                                                            "Fn::GetAtt": [
-                                                                                "MultiNodeHadoopNode3",
-                                                                                "PublicDnsName"
-                                                                            ]
-                                                                        },
-                                                                        {
-                                                                            "Fn::GetAtt": [
-                                                                                "MultiNodeHadoopNode4",
-                                                                                "PublicDnsName"
-                                                                            ]
-                                                                        },
-                                                                        {
-                                                                            "Fn::GetAtt": [
-                                                                                "MultiNodeHadoopNode5",
-                                                                                "PublicDnsName"
-                                                                            ]
-                                                                        },
-                                                                        {
-                                                                            "Fn::GetAtt": [
-                                                                                "MultiNodeHadoopNode6",
-                                                                                "PublicDnsName"
-                                                                            ]
-                                                                        }
-                                                                    ]
-                                                                ]
-                                                            },
-                                                            {
-                                                                "Fn::Join": [
-                                                                    ",",
-                                                                    [
-                                                                        {
-                                                                            "Fn::GetAtt": [
-                                                                                "MultiNodeHadoopGateway",
-                                                                                "PublicDnsName"
-                                                                            ]
-                                                                        },
-                                                                        {
-                                                                            "Fn::GetAtt": [
-                                                                                "MultiNodeHadoopNode2",
-                                                                                "PublicDnsName"
-                                                                            ]
-                                                                        },
-                                                                        {
-                                                                            "Fn::GetAtt": [
-                                                                                "MultiNodeHadoopNode3",
-                                                                                "PublicDnsName"
-                                                                            ]
-                                                                        }
-                                                                    ]
-                                                                ]
-                                                            }
-                                                        ]
-                                                    }
-                                                ]
-                                            },
-                                            "\n",
                                             "echo \"Changing the Doamin Hostname\" \n",
                                             "Adminpublicip=$(curl http://169.254.169.254/latest/meta-data/public-hostname) \n",
                                             "/opt/informatica/isp/bin/infasetup.sh  updateGatewayNode -na $Adminpublicip:6005 -rst \n",
@@ -3447,108 +3342,8 @@
                                             "sleep 30 \n",
                                             "/opt/informatica/isp/bin/infacmd.sh mrs restoreContents -dn Domain -un Administrator -pd Administrator -sn MRS -if /home/ec2-user/Mercury_Setup/MRSBackup.mrep \n",
                                             "sleep 30 \n",
-                                            "fi \n",
-                                            "echo \"Creating the IHS \"  \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh ihs createService -dn Domain -nn node01 -un Administrator -pd Administrator -sn IHS -p 9085 -hgh $IHSHOSTNAME -hgp 8080 -hn $IHSNODES -gu root  \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh ISP assignLicense -dn Domain -un Administrator -pd Administrator -ln ${LICENSE_NAME} -sn IHS  \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh ihs updateServiceOptions -dn Domain -un Administrator -pd Administrator -sn IHS -o IcsCustomOptions.ihs.enable.memcheck=false  \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh ihs updateServiceOptions -dn Domain -un Administrator -pd Administrator -sn IHS -o IcsCustomOptions.ihs.enable.cpucheck=false  \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh ihs updateServiceOptions -dn Domain -un Administrator -pd Administrator -sn IHS -o IcsCustomOptions.ihs.enable.diskcheck=false  \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh ihs updateServiceOptions -dn Domain -un Administrator -pd Administrator -sn IHS -o IcsCustomOptions.ihs.ambari.testing=true  \n",
-                                            "echo \"Creating the LDM \"  \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh ldm createService -dn Domain  -nn node01 -un Administrator -pd Administrator -sn LDM -mrs MRS -mrsun Administrator -mrspd Administrator -dis DIS -cms CMS -p 8085 -tls false -ise false -ihsn IHS -isc false -cssl false  \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh assignlicense -dn Domain -un Administrator -pd Administrator -sn LDM -ln ${LICENSE_NAME}  \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh ldm updateServiceOptions -dn Domain -un Administrator -pd Administrator -sn LDM -o LdmCustomOptions.ldm.repo.content.create.timeout.millis=1200000  \n",
-                                            "loadType=",
-                                            {
-                                                "Fn::FindInMap": [
-                                                    "ClusterSizeMapping",
-                                                    {
-                                                        "Ref": "ICSClusterSize"
-                                                    },
-                                                    "loadtype"
-                                                ]
-                                            },
-                                            "\n",
-                                            "/opt/informatica/isp/bin/infacmd.sh ldm updateServiceOptions -dn Domain -un Administrator -pd Administrator -sn LDM -o LdmCustomOptions.loadType=$loadType  \n",
-                                            "echo \"Creating the AS \"  \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh as createService -dn Domain -nn node01 -sn AS -un Administrator -pd Administrator -rs MRS -ds DIS -ffl /tmp -cs LDM -csau Administrator -csap Administrator -au Administrator -ap Administrator -bgefd /tmp -HttpPort 8089 >> /installation.log \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh assignLicense -dn Domain -un Administrator -pd Administrator -ln $LICENSE_NAME -sn AS >> /installation.log \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh as updateServiceOptions -dn Domain -sn AS -un Administrator -pd Administrator  -o BGExport.BGPermanentAttachmentFileLocation=/tmp  \n",
-                                            "echo \"Creating the CCO Object for EMR and Connection for s3 and Redshift \"  \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh cluster createConfiguration -dn Domain -un Administrator -pd Administrator -re 30 -cn CCOEMR -dt EMR -path /home/ec2-user/hadoop.zip \n",
-                                            "publicdns=",
-                                            {
-                                                "Fn::GetAtt": [
-                                                    "EMRCluster",
-                                                    "MasterPublicDNS"
-                                                ]
-                                            },
-                                            "\n",
-                                            "region=",
-                                            {
-                                                "Ref": "AWS::Region"
-                                            },
-                                            "\n",
-                                            "privatedns=`aws ec2 describe-instances  --filters Name=dns-name,Values=$publicdns --query 'Reservations[*].Instances[*].{ID:PrivateDnsName}' --region $region | grep ID | cut -d \":\" -f2 | sed 's/[ ,\"]//g'` \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh createConnection -dn Domain -un Administrator -pd Administrator -ct HADOOP -cn HADOOP -o clusterConfigId=CCOEMR \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh  createConnection -dn Domain -un Administrator -pd Administrator -cn HIVE -cid HIVE -ct HIVE -o connectString=jdbc:hive2://$privatedns:10000/default enableQuotes=false metadataConnString=jdbc:hive2://$privatedns:10000/default bypassHiveJDBCServer=false pushDownMode=true relationalSourceAndTarget=true databaseName=default hiveWarehouseDirectoryOnHDFS='/user/hive/warehouse' UserName='hive' clusterConfigId=CCOEMR \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh createConnection -dn Domain -un Administrator -pd Administrator -cn HDFS -cid HDFS -ct \"HadoopFileSystem\" -cun root -o NAMENODEURL=hdfs://$privatedns:8020/ clusterConfigId=CCOEMR \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh createConnection -dn Domain -un Administrator -pd Administrator -ct HBASE -cn HBASE -o clusterConfigId=CCOEMR \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh isp createConnection -dn Domain -un Administrator -pd Administrator -cn RedShift -ct AMAZONREDSHIFT -o username=",
-                                            {
-                                                "Ref": "RedshiftUsername"
-                                            },
-                                            " password=",
-                                            {
-                                                "Ref": "RedshiftPassword"
-                                            },
-                                            "  CLUSTERNODETYPE=dc1.large NUMBEROFNODESINCLUSTER=1 JDBCURL=jdbc:redshift://",
-                                            {
-                                                "Fn::GetAtt": [
-                                                    "RedshiftCluster",
-                                                    "Endpoint.Address"
-                                                ]
-                                            },
-                                            ":",
-                                            {
-                                                "Fn::GetAtt": [
-                                                    "RedshiftCluster",
-                                                    "Endpoint.Port"
-                                                ]
-                                            },
-                                            "/",
-                                            {
-                                                "Ref": "RedshiftDatabaseName"
-                                            },
-                                            "\n",
-                                            "/opt/informatica/isp/bin/infacmd.sh isp createConnection -dn Domain -un Administrator -pd Administrator -cn S3 -ct AMAZONS3 -o \"regionName='",
-                                            {
-                                                "Fn::FindInMap": [
-                                                    "S3ConnectionMap",
-                                                    {
-                                                        "Ref": "AWS::Region"
-                                                    },
-                                                    "REGION"
-                                                ]
-                                            },
-                                            "'",
-                                            " FolderPath=",
-                                            {
-                                                "Ref": "S3BucketName"
-                                            },
-                                            "\" \n",
-                                            "echo \"Enabling the IHS , LDM and AS \"  \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh ISP enableService -dn Domain -un Administrator -pd Administrator -sn IHS  \n",
-                                            " if [[ $sampledata == \"Yes\" ]] \n",
-                                            " then \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh ldm restoreContents -dn Domain -un Administrator -pd Administrator -sn LDM -if /home/ec2-user/Mercury_Setup/CatalogBackup.zip \n",
-                                            "sleep 30 \n",
-                                            "fi \n",
-                                            "/opt/informatica/isp/bin/infacmd.sh enableservice -dn Domain -un Administrator -pd Administrator -sn LDM \n",
-                                            "sleep 10m",
-                                            "\n",
-                                            "/opt/informatica/isp/bin/infacmd.sh enableService -dn Domain -un Administrator -pd Administrator -sn AS \n"
+                                            "fi \n"
+                                            
                                         ]
                                     ]
                                 },
@@ -3556,6 +3351,240 @@
                                 "owner": "ec2-user",
                                 "group": "ec2-user"
                             },
+							"/home/ec2-user/Mercury_Setup/createConnections.sh":{
+							"content":{
+								"Fn::Join": [
+										"",
+										[
+											"echo \"Creating the CCO Object for EMR and Connection for s3 and Redshift \"  \n",
+											"/opt/informatica/isp/bin/infacmd.sh cluster createConfiguration -dn Domain -un Administrator -pd Administrator -re 30 -cn CCOEMR -dt EMR -path /home/ec2-user/hadoop.zip \n",
+											"publicdns=", {
+
+												"Fn::GetAtt": [
+													"EMRCluster",
+													"MasterPublicDNS"
+												]
+
+											},
+											"\n",
+											"region=", {
+												"Ref": "AWS::Region"
+											},
+											"\n",
+											"privatedns=`aws ec2 describe-instances  --filters Name=dns-name,Values=$publicdns --query 'Reservations[*].Instances[*].{ID:PrivateDnsName}' --region $region | grep ID | cut -d \":\" -f2 | sed 's/[ ,\"]//g'` \n",
+											"/opt/informatica/isp/bin/infacmd.sh createConnection -dn Domain -un Administrator -pd Administrator -ct HADOOP -cn HADOOP -o clusterConfigId=CCOEMR \n",
+											"/opt/informatica/isp/bin/infacmd.sh  createConnection -dn Domain -un Administrator -pd Administrator -cn HIVE -cid HIVE -ct HIVE -o connectString=jdbc:hive2://$privatedns:10000/default enableQuotes=false metadataConnString=jdbc:hive2://$privatedns:10000/default bypassHiveJDBCServer=false pushDownMode=true relationalSourceAndTarget=true databaseName=default hiveWarehouseDirectoryOnHDFS='/user/hive/warehouse' UserName='hive' clusterConfigId=CCOEMR \n",
+											"/opt/informatica/isp/bin/infacmd.sh createConnection -dn Domain -un Administrator -pd Administrator -cn HDFS -cid HDFS -ct \"HadoopFileSystem\" -cun root -o NAMENODEURL=hdfs://$privatedns:8020/ clusterConfigId=CCOEMR \n",
+											"/opt/informatica/isp/bin/infacmd.sh createConnection -dn Domain -un Administrator -pd Administrator -ct HBASE -cn HBASE -o clusterConfigId=CCOEMR \n",
+
+											"/opt/informatica/isp/bin/infacmd.sh isp createConnection -dn Domain -un Administrator -pd Administrator -cn RedShift -ct AMAZONREDSHIFT -o username=", {
+												"Ref": "RedshiftUsername"
+											},
+											" password=", {
+												"Ref": "RedshiftPassword"
+											},
+											"  CLUSTERNODETYPE=dc1.large NUMBEROFNODESINCLUSTER=1 JDBCURL=jdbc:redshift://", {
+												"Fn::GetAtt": [
+													"RedshiftCluster",
+													"Endpoint.Address"
+												]
+
+											},
+											":", {
+
+												"Fn::GetAtt": [
+													"RedshiftCluster",
+													"Endpoint.Port"
+												]
+
+											},
+
+											"/", {
+
+												"Ref": "RedshiftDatabaseName"
+											},
+											"\n",
+											"/opt/informatica/isp/bin/infacmd.sh isp createConnection -dn Domain -un Administrator -pd Administrator -cn S3 -ct AMAZONS3 -o \"regionName='", {
+												"Fn::FindInMap": [
+													"S3ConnectionMap", {
+														"Ref": "AWS::Region"
+													},
+													"REGION"
+												]
+											},
+											"'",
+											" FolderPath=", {
+												"Ref": "S3BucketName"
+
+											},
+											"\" \n"
+							
+							]
+							]
+							
+							
+							},
+							"mode": "000770",
+							"owner": "ec2-user",
+							"group": "ec2-user"
+							
+							},
+							"/home/ec2-user/Mercury_Setup/ldmstartup.sh":{
+							"content": {
+									"Fn::Join": [
+										"",
+										[
+											"LICENSE_NAME=EICLicense.key",
+											"\n",
+											"administratorName=", {
+												"Ref": "InformaticaAdminUsername"
+											},
+											"\n",
+											"administratorPassword=", {
+												"Ref": "InformaticaAdminPassword"
+											},
+											"\n",
+											"IHSHOSTNAME=", {
+												"Fn::If": [
+													"SingleNodeCnd", {
+														"Fn::GetAtt": [
+															"HadoopGateway",
+															"PublicDnsName"
+														]
+													}, {
+														"Fn::GetAtt": [
+															"MultiNodeHadoopGateway",
+															"PublicDnsName"
+														]
+													}
+												]
+											},
+											"\n",
+											"IHSNODES=", {
+												"Fn::If": [
+													"SingleNodeCnd", {
+														"Fn::GetAtt": [
+															"HadoopGateway",
+															"PublicDnsName"
+														]
+													}, {
+														"Fn::If": [
+															"CreateLargeClusterCnd", {
+																"Fn::Join": [
+																	",",
+																	[{
+																			"Fn::GetAtt": [
+																				"MultiNodeHadoopGateway",
+																				"PublicDnsName"
+																			]
+																		}, {
+																			"Fn::GetAtt": [
+																				"MultiNodeHadoopNode2",
+																				"PublicDnsName"
+																			]
+																		}, {
+																			"Fn::GetAtt": [
+																				"MultiNodeHadoopNode3",
+																				"PublicDnsName"
+																			]
+																		}, {
+																			"Fn::GetAtt": [
+																				"MultiNodeHadoopNode4",
+																				"PublicDnsName"
+																			]
+																		}, {
+																			"Fn::GetAtt": [
+																				"MultiNodeHadoopNode5",
+																				"PublicDnsName"
+																			]
+																		}, {
+																			"Fn::GetAtt": [
+																				"MultiNodeHadoopNode6",
+																				"PublicDnsName"
+																			]
+																		}
+																	]
+																]
+															}, {
+																"Fn::Join": [
+																	",",
+																	[{
+																			"Fn::GetAtt": [
+																				"MultiNodeHadoopGateway",
+																				"PublicDnsName"
+																			]
+																		}, {
+																			"Fn::GetAtt": [
+																				"MultiNodeHadoopNode2",
+																				"PublicDnsName"
+																			]
+																		}, {
+																			"Fn::GetAtt": [
+																				"MultiNodeHadoopNode3",
+																				"PublicDnsName"
+																			]
+																		}
+																	]
+																]
+															}
+														]
+													}
+												]
+											},
+											"\n",
+											
+											"echo \"Creating the IHS \"  \n",
+											"/opt/informatica/isp/bin/infacmd.sh ihs createService -dn Domain -nn node01 -un Administrator -pd Administrator -sn IHS -p 9085 -hgh $IHSHOSTNAME -hgp 8080 -hn $IHSNODES -gu root  \n",
+											"/opt/informatica/isp/bin/infacmd.sh ISP assignLicense -dn Domain -un Administrator -pd Administrator -ln ${LICENSE_NAME} -sn IHS  \n",
+											"/opt/informatica/isp/bin/infacmd.sh ihs updateServiceOptions -dn Domain -un Administrator -pd Administrator -sn IHS -o IcsCustomOptions.ihs.enable.memcheck=false  \n",
+											"/opt/informatica/isp/bin/infacmd.sh ihs updateServiceOptions -dn Domain -un Administrator -pd Administrator -sn IHS -o IcsCustomOptions.ihs.enable.cpucheck=false  \n",
+											"/opt/informatica/isp/bin/infacmd.sh ihs updateServiceOptions -dn Domain -un Administrator -pd Administrator -sn IHS -o IcsCustomOptions.ihs.enable.diskcheck=false  \n",
+											"/opt/informatica/isp/bin/infacmd.sh ihs updateServiceOptions -dn Domain -un Administrator -pd Administrator -sn IHS -o IcsCustomOptions.ihs.ambari.testing=true  \n",
+											"echo \"Creating the LDM \"  \n",
+											"/opt/informatica/isp/bin/infacmd.sh ldm createService -dn Domain  -nn node01 -un Administrator -pd Administrator -sn LDM -mrs MRS -mrsun Administrator -mrspd Administrator -dis DIS -cms CMS -p 8085 -tls false -ise false -ihsn IHS -isc false -cssl false  \n",
+											"/opt/informatica/isp/bin/infacmd.sh assignlicense -dn Domain -un Administrator -pd Administrator -sn LDM -ln ${LICENSE_NAME}  \n",
+
+											"/opt/informatica/isp/bin/infacmd.sh ldm updateServiceOptions -dn Domain -un Administrator -pd Administrator -sn LDM -o LdmCustomOptions.ldm.repo.content.create.timeout.millis=1200000  \n",
+											"loadType=", {
+												"Fn::FindInMap": [
+													"ClusterSizeMapping", {
+														"Ref": "ICSClusterSize"
+													},
+													"loadtype"
+												]
+											},
+											"\n",
+											"/opt/informatica/isp/bin/infacmd.sh ldm updateServiceOptions -dn Domain -un Administrator -pd Administrator -sn LDM -o LdmCustomOptions.loadType=$loadType  \n",
+											"echo \"Creating the AS \"  \n",
+											"/opt/informatica/isp/bin/infacmd.sh as createService -dn Domain -nn node01 -sn AS -un Administrator -pd Administrator -rs MRS -ds DIS -ffl /tmp -cs LDM -csau Administrator -csap Administrator -au Administrator -ap Administrator -bgefd /tmp -HttpPort 8089 >> /installation.log \n",
+											"/opt/informatica/isp/bin/infacmd.sh assignLicense -dn Domain -un Administrator -pd Administrator -ln $LICENSE_NAME -sn AS >> /installation.log \n",
+											"/opt/informatica/isp/bin/infacmd.sh as updateServiceOptions -dn Domain -sn AS -un Administrator -pd Administrator  -o BGExport.BGPermanentAttachmentFileLocation=/tmp  \n",
+											"sampledata=", {
+												"Ref": "ImportSampleData"
+											},
+											"\n",
+											"echo \"Enabling the IHS , LDM and AS \"  \n",
+											"/opt/informatica/isp/bin/infacmd.sh ISP enableService -dn Domain -un Administrator -pd Administrator -sn IHS  \n",
+
+											" if [[ $sampledata == \"Yes\" ]] \n",
+											" then \n",
+											"/opt/informatica/isp/bin/infacmd.sh ldm restoreContents -dn Domain -un Administrator -pd Administrator -sn LDM -if /home/ec2-user/Mercury_Setup/CatalogBackup.zip \n",
+											"sleep 30 \n",
+											"fi \n",
+											"/opt/informatica/isp/bin/infacmd.sh enableservice -dn Domain -un Administrator -pd Administrator -sn LDM \n",
+											"sleep 10m",
+											"\n",
+											"/opt/informatica/isp/bin/infacmd.sh enableService -dn Domain -un Administrator -pd Administrator -sn AS \n"
+										]
+									]
+											
+								},
+								"mode": "000770",
+								"owner": "ec2-user",
+								"group": "ec2-user"
+							}
+							,
+							
                             "/home/ec2-user/Mercury_Setup/scanner_creation.sh": {
                                 "content": {
                                     "Fn::Join": [
@@ -3662,6 +3691,8 @@
                                             "rm -f /home/ec2-user/Mercury_Setup/config_template.xml \n",
                                             "rm -f /home/ec2-user/Mercury_Setup/mercury_setup.jar \n",
                                             "rm -f /home/ec2-user/Mercury_Setup/scanner1.sh \n",
+											"rm -f /home/ec2-user/Mercury_Setup/ldmstartup.sh \n",
+											"rm -f /home/ec2-user/Mercury_Setup/createConnections.sh \n",
                                             "rm -f /home/ec2-user/Mercury_Setup/mercury_setup.jar \n",
                                             "rm -f /home/ec2-user/Mercury_Setup/scanner.sh \n",
                                             "rm -f /home/ec2-user/Mercury_Setup/CatalogBackup.zip \n",
@@ -3723,18 +3754,26 @@
                     },
                     "Configure2": {
                         "commands": {
-                            "02_MercurySetup": {
-                                "command": " /home/ec2-user/Mercury_Setup/infastartservice.sh",
-                                "ignoreErrors": "true"
-                            },
-                            "03_LDMScanner": {
-                                "command": " /home/ec2-user/Mercury_Setup/scanner_creation.sh",
-                                "ignoreErrors": "true"
-                            },
-                            "04_cleanupScripts": {
-                                "command": " /home/ec2-user/Mercury_Setup/cleanupScripts.sh"
-                            }
-                        }
+							"02_MercurySetup": {
+								"command": " /home/ec2-user/Mercury_Setup/infastartservice.sh"
+								
+							},
+							"03_Connections":{
+							"command": " /home/ec2-user/Mercury_Setup/createConnections.sh"
+							
+							},
+							"04_LDMSetup": {
+								"command": " /home/ec2-user/Mercury_Setup/ldmstartup.sh",
+								"ignoreErrors":"true"
+							},
+							"05_LDMScanner": {
+								"command": " /home/ec2-user/Mercury_Setup/scanner_creation.sh",
+								"ignoreErrors":"true"
+							},
+							"06_cleanupScripts": {
+								"command": " /home/ec2-user/Mercury_Setup/cleanupScripts.sh"
+							}
+						}
                     }
                 }
             },
