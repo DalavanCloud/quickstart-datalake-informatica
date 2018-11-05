@@ -520,7 +520,7 @@
                 "INFADBHVM": "arn:aws:rds:eu-west-1:516473838419:snapshot:infa1020oracle"
             },
             "eu-west-2": {
-                "INFAADMINHVM": "ami-4d544b29",
+                "INFAADMINHVM": "ami-080fd34b12081427b",
                 "INFAEICCLUSTERHVM": "ami-4f534c2b",
                 "INFADBHVM": "arn:aws:rds:eu-west-2:516473838419:snapshot:infa1020oracle"
             },
